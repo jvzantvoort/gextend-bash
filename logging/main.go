@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -19,6 +20,10 @@ type LogMessage struct {
 	StdErr    bool      `json:"-"`
 	Message   string    `json:"message"`
 	Time      time.Time `json:"time"`
+}
+
+type LogMessages struct {
+	messages []LogMessage
 }
 
 func GetString(cmd cobra.Command, name string) string {
@@ -121,6 +126,29 @@ func NewLogMessage(level string) *LogMessage {
 	retv := &LogMessage{}
 	retv.Time = time.Now()
 	retv.Priority = strings.ToUpper(level)
+
+	return retv
+}
+
+func NewLogMessages(inputfile string) *LogMessages {
+	retv := &LogMessages{}
+	filehandle, err := os.Open(inputfile)
+	defer filehandle.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	scanner := bufio.NewScanner(filehandle)
+	// optionally, resize scanner's capacity for lines over 64K, see next example
+	for scanner.Scan() {
+		obj := &LogMessage{}
+		json.Unmarshal([]byte(scanner.Bytes()), &obj)
+		retv.messages = append(retv.messages, *obj)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 
 	return retv
 }

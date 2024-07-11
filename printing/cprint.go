@@ -3,16 +3,17 @@ package printing
 import (
 	"fmt"
 	"strings"
+
 	"github.com/fatih/color"
 )
 
 // Structure to hold the functionality of cprint
 type Cprint struct {
-	Format string
-	color  color.Color
-	token  rune
-	Colors map[string]color.Attribute
-	tokens map[string]rune
+	Format  string
+	color   color.Color
+	token   rune
+	Colors  map[string]color.Attribute
+	tokens  map[string]rune
 	formats map[string]string
 }
 
