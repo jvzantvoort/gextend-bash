@@ -1,40 +1,26 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2024 John van Zantvoort <john@vanzantvoort.org>
 */
 package main
 
 import (
-	"fmt"
-
+	"github.com/jvzantvoort/gextend-bash/messages"
 	"github.com/spf13/cobra"
 )
 
-// warningCmd represents the warning command
-var warningCmd = &cobra.Command{
+// WarningCmd represents the warning command
+var WarningCmd = &cobra.Command{
 	Use:   "warning",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("warning called")
-	},
+	Short: "Log a warning command",
+	Long:  messages.GetLong("logging"),
+	Run:   handleLogCmd,
 }
 
 func init() {
-	rootCmd.AddCommand(warningCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// warningCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// warningCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(WarningCmd)
+	WarningCmd.Flags().StringP("tag", "t", "", "mark every line with this tag")
+	WarningCmd.Flags().StringP("file", "f", "output.log", "log the contents of this file")
+	WarningCmd.Flags().StringP("priority", "p", "", "mark given message with this priority")
+	WarningCmd.Flags().BoolP("skip-empty", "e", false, "do not log empty lines when processing files")
+	WarningCmd.Flags().BoolP("stderr", "s", false, "output message to standard error as well")
 }

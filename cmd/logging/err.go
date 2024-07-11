@@ -1,40 +1,26 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2024 John van Zantvoort <john@vanzantvoort.org>
 */
 package main
 
 import (
-	"fmt"
-
+	"github.com/jvzantvoort/gextend-bash/messages"
 	"github.com/spf13/cobra"
 )
 
-// errCmd represents the err command
-var errCmd = &cobra.Command{
+// ErrCmd represents the err command
+var ErrCmd = &cobra.Command{
 	Use:   "err",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("err called")
-	},
+	Short: "Log a err command",
+	Long:  messages.GetLong("logging"),
+	Run:   handleLogCmd,
 }
 
 func init() {
-	rootCmd.AddCommand(errCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// errCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// errCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(ErrCmd)
+	ErrCmd.Flags().StringP("tag", "t", "", "mark every line with this tag")
+	ErrCmd.Flags().StringP("file", "f", "output.log", "log the contents of this file")
+	ErrCmd.Flags().StringP("priority", "p", "", "mark given message with this priority")
+	ErrCmd.Flags().BoolP("skip-empty", "e", false, "do not log empty lines when processing files")
+	ErrCmd.Flags().BoolP("stderr", "s", false, "output message to standard error as well")
 }

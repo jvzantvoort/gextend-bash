@@ -1,40 +1,26 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2024 John van Zantvoort <john@vanzantvoort.org>
 */
 package main
 
 import (
-	"fmt"
-
+	"github.com/jvzantvoort/gextend-bash/messages"
 	"github.com/spf13/cobra"
 )
 
-// debugCmd represents the debug command
-var debugCmd = &cobra.Command{
+// DebugCmd represents the debug command
+var DebugCmd = &cobra.Command{
 	Use:   "debug",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("debug called")
-	},
+	Short: "Log a debug command",
+	Long:  messages.GetLong("logging"),
+	Run:   handleLogCmd,
 }
 
 func init() {
-	rootCmd.AddCommand(debugCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// debugCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// debugCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(DebugCmd)
+	DebugCmd.Flags().StringP("tag", "t", "", "mark every line with this tag")
+	DebugCmd.Flags().StringP("file", "f", "output.log", "log the contents of this file")
+	DebugCmd.Flags().StringP("priority", "p", "", "mark given message with this priority")
+	DebugCmd.Flags().BoolP("skip-empty", "e", false, "do not log empty lines when processing files")
+	DebugCmd.Flags().BoolP("stderr", "s", false, "output message to standard error as well")
 }

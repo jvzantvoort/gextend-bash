@@ -1,40 +1,26 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2024 John van Zantvoort <john@vanzantvoort.org>
 */
 package main
 
 import (
-	"fmt"
-
+	"github.com/jvzantvoort/gextend-bash/messages"
 	"github.com/spf13/cobra"
 )
 
-// emergCmd represents the emerg command
-var emergCmd = &cobra.Command{
+// EmergCmd represents the emerg command
+var EmergCmd = &cobra.Command{
 	Use:   "emerg",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("emerg called")
-	},
+	Short: "Log a emerg command",
+	Long:  messages.GetLong("logging"),
+	Run:   handleLogCmd,
 }
 
 func init() {
-	rootCmd.AddCommand(emergCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// emergCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// emergCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(EmergCmd)
+	EmergCmd.Flags().StringP("tag", "t", "", "mark every line with this tag")
+	EmergCmd.Flags().StringP("file", "f", "output.log", "log the contents of this file")
+	EmergCmd.Flags().StringP("priority", "p", "", "mark given message with this priority")
+	EmergCmd.Flags().BoolP("skip-empty", "e", false, "do not log empty lines when processing files")
+	EmergCmd.Flags().BoolP("stderr", "s", false, "output message to standard error as well")
 }
