@@ -1,4 +1,4 @@
-name: Audit
+name: Audit the go source
 
 on:
   push:
@@ -24,8 +24,8 @@ jobs:
 
     - name: Build
       run: |
-        go build -v ./cmd/logging
-        go build -v ./cmd/print_status
+        go build -v -o build/logging ./cmd/logging
+        go build -v -o build/print_status ./cmd/print_status
 
     - name: Run go vet
       run: go vet ./...
