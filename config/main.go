@@ -137,10 +137,10 @@ func (m *MainConfig) GetConfigDir() string {
 	}
 
 	// check environment variable
-	gextend-bash_path, gextend-bash_path_set := os.LookupEnv("GOPROJ_CONFIG_DIR")
+	item_path, item_path_set := os.LookupEnv("GOPROJ_CONFIG_DIR")
 
-	if gextend-bash_path_set {
-		m.ConfigDir = gextend-bash_path
+	if item_path_set {
+		m.ConfigDir = item_path
 		return m.ConfigDir
 	}
 
@@ -170,10 +170,10 @@ func (m *MainConfig) GetArchiveDir() string {
 	}
 
 	// check environment variable
-	gextend-bash_path, gextend-bash_path_set := os.LookupEnv("GOPROJ_ARCHIVE_DIR")
+	item_path, item_path_set := os.LookupEnv("GOPROJ_ARCHIVE_DIR")
 
-	if gextend-bash_path_set {
-		m.ArchiveDir = gextend-bash_path
+	if item_path_set {
+		m.ArchiveDir = item_path
 		return m.ArchiveDir
 	}
 
