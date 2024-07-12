@@ -28,10 +28,10 @@ jobs:
       run: |
         ./build.sh package
 
-    - name: Archive build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: arcive packages
-        path: |
-          pkg
+        #    - name: Archive build artifacts
+        #      uses: actions/upload-artifact@v4
+        #      with:
+        #        name: arcive packages
+        #        path: |
+        #          pkg
 
