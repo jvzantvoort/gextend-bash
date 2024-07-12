@@ -99,10 +99,10 @@ func (l *LogMessage) ImportArgs(cmd *cobra.Command, args []string) {
 
 func (l LogMessage) Print() error {
 	fileh, err := os.OpenFile(l.File, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	defer fileh.Close()
 	if err != nil {
 		return err
 	}
+	defer fileh.Close()
 
 	msg := l.MakeString()
 	jmsg, _ := l.MakeJSONString()
@@ -133,10 +133,10 @@ func NewLogMessage(level string) *LogMessage {
 func NewLogMessages(inputfile string) *LogMessages {
 	retv := &LogMessages{}
 	filehandle, err := os.Open(inputfile)
-	defer filehandle.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer filehandle.Close()
 
 	scanner := bufio.NewScanner(filehandle)
 	// optionally, resize scanner's capacity for lines over 64K, see next example

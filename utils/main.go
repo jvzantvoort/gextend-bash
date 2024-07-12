@@ -29,12 +29,12 @@ func MkdirP(dirname string, mode int) error {
 		if target_stat.IsDir() {
 			return nil
 		} else {
-			return fmt.Errorf("Target exists %s but is not a directory", dirname)
+			return fmt.Errorf("target exists %s but is not a directory", dirname)
 		}
 	}
 
 	if err := os.MkdirAll(dirname, os.FileMode(mode)); err != nil {
-		return fmt.Errorf("Directory cannot be created: %s", dirname)
+		return fmt.Errorf("directory cannot be created: %s", dirname)
 	}
 	return nil
 }

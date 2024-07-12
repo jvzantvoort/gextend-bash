@@ -29,6 +29,7 @@ func getWidth() int {
 	return int(ws.Col)
 }
 
+/*
 func getHeight() int {
 	ws := &winsize{}
 	retCode, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
@@ -41,6 +42,7 @@ func getHeight() int {
 	}
 	return int(ws.Row)
 }
+*/
 
 func CenterLine(line string, width int) string {
 	line = strings.TrimSpace(line)

@@ -29,7 +29,10 @@ jobs:
 
     - name: Build
       run: |
-        go build -v -o build/logging ./cmd/logging
-        go build -v -o build/print_status ./cmd/print_status
+        find cmd -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | \
+        while read -r target
+        do
+          go build -v -o build/${target} ./cmd/${target}
+        done
 
 

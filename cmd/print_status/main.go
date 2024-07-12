@@ -19,7 +19,7 @@ func main() {
 
 	if len(args) < 2 {
 		keys := []string{}
-		for keyn, _ := range cr.Colors {
+		for keyn := range cr.Colors {
 			keys = append(keys, keyn)
 		}
 		help(keys...)

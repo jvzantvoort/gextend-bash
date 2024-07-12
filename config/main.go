@@ -64,7 +64,7 @@ func (u *UserConfig) SetMailAddress(args ...string) error {
 func (u *UserConfig) SetCompany(args ...string) error {
 	newval := DefaultString(args...)
 	if len(newval) == 0 && len(u.Company) == 0 {
-		return fmt.Errorf("Company not set")
+		return fmt.Errorf("company not set")
 	}
 	if len(newval) != 0 {
 		u.Company = newval
@@ -75,7 +75,7 @@ func (u *UserConfig) SetCompany(args ...string) error {
 func (u *UserConfig) SetCopyright(args ...string) error {
 	newval := DefaultString(args...)
 	if len(newval) == 0 && len(u.Copyright) == 0 {
-		return fmt.Errorf("Copyright not set")
+		return fmt.Errorf("copyright not set")
 	}
 	if len(newval) != 0 {
 		u.Copyright = newval
@@ -86,7 +86,7 @@ func (u *UserConfig) SetCopyright(args ...string) error {
 func (u *UserConfig) SetLicense(args ...string) error {
 	newval := DefaultString(args...)
 	if len(newval) == 0 && len(u.License) == 0 {
-		return fmt.Errorf("License not set")
+		return fmt.Errorf("license not set")
 	}
 	if len(newval) != 0 {
 		u.License = newval
@@ -97,7 +97,7 @@ func (u *UserConfig) SetLicense(args ...string) error {
 func (u *UserConfig) SetUser(args ...string) error {
 	newval := DefaultString(args...)
 	if len(newval) == 0 && len(u.User) == 0 {
-		return fmt.Errorf("User not set")
+		return fmt.Errorf("user not set")
 	}
 	if len(newval) != 0 {
 		u.User = newval
@@ -108,7 +108,7 @@ func (u *UserConfig) SetUser(args ...string) error {
 func (u *UserConfig) SetUsername(args ...string) error {
 	newval := DefaultString(args...)
 	if len(newval) == 0 && len(u.Username) == 0 {
-		return fmt.Errorf("Username not set")
+		return fmt.Errorf("username not set")
 	}
 	if len(newval) != 0 {
 		u.Username = newval
@@ -268,11 +268,11 @@ func (m MainConfig) Write(writer io.Writer) error {
 func (m *MainConfig) ReadFromFile(name string) error {
 
 	fileh, err := os.Open(m.ConfigFile(name))
-	defer fileh.Close()
 
 	if err != nil {
 		return err
 	}
+	defer fileh.Close()
 
 	return m.Read(fileh)
 }
@@ -283,11 +283,11 @@ func (m MainConfig) WriteToFile(name string) error {
 	defer log.Debugf("save to: %s, end", m.ConfigFile(name))
 
 	fileh, err := os.OpenFile(m.ConfigFile(name), os.O_WRONLY|os.O_CREATE, 0644)
-	defer fileh.Close()
 
 	if err != nil {
 		return err
 	}
+	defer fileh.Close()
 	return m.Write(fileh)
 }
 
@@ -314,7 +314,7 @@ func (m *MainConfig) Get(name string) (string, error) {
 	case "user.username":
 		return m.UserConfig.Username, nil
 	default:
-		return "", fmt.Errorf("Illegal field: %s", name)
+		return "", fmt.Errorf("illegal field: %s", name)
 	}
 }
 
