@@ -12,19 +12,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Config missing godoc.
 type Config struct {
-	AppName        string
-	HomeDir        string
-	ConfigDir      string
-	ConfigDirMode int
+	AppName   string
+	HomeDir   string
+	ConfigDir string
 }
 
-const (
-	ApplicationName string = "gextend-bash"
-	ConfigDirEnv    string = "XTRA_BASH_CONFIG_DIR"
-	ConfigDirName   string = "gextend-bash"
-)
-
+// GetHomeDir missing godoc.
 func GetHomeDir() (string, error) {
 	usr, err := user.Current()
 	if err == nil {
@@ -57,7 +52,7 @@ func (c Config) prefix() string {
 }
 
 // mkdir create directory
-func (c Config) mkdir(path string, mode int) {
+func (c Config) mkdir(path string) {
 	log_prefix := c.prefix()
 	log.Debugf("%s: start", log_prefix)
 	defer log.Debugf("%s: end", log_prefix)
@@ -73,7 +68,7 @@ func (c Config) mkdir(path string, mode int) {
 			log.Errorf("found target: %s but it is not a directory", path)
 		}
 	}
-	mode_oct := os.FileMode(mode)
+	mode_oct := os.FileMode(ConstDirMode)
 	os.MkdirAll(path, mode_oct)
 
 }
@@ -88,6 +83,7 @@ func (c *Config) SetDefaultHomeDir() error {
 	return nil
 }
 
+// SetDefaultConfigDir missing godoc.
 func (c *Config) SetDefaultConfigDir() {
 	if len(c.ConfigDir) != 0 {
 		return
@@ -102,17 +98,18 @@ func (c *Config) SetDefaultConfigDir() {
 		c.ConfigDir = item_path
 	} else {
 		c.ConfigDir = path.Join(c.HomeDir, ".config", ConfigDirName)
-		c.mkdir(c.ConfigDir, c.ConfigDirMode) // make sure the directory exists
+		c.mkdir(c.ConfigDir) // make sure the directory exists
 	}
 }
 
+// Initialize missing godoc.
 func (c *Config) Initialize() {
 	c.AppName = ApplicationName
-	c.ConfigDirMode = 0755
 	c.SetDefaultHomeDir()
 	c.SetDefaultConfigDir()
 }
 
+// NewConfig missing godoc.
 func NewConfig() *Config {
 	retv := &Config{}
 	retv.Initialize()
