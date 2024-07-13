@@ -19,7 +19,7 @@ var NoticeCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(NoticeCmd)
 	NoticeCmd.Flags().StringP("tag", "t", "", "mark every line with this tag")
-	NoticeCmd.Flags().StringP("file", "f", "output.log", "log the contents of this file")
+	NoticeCmd.Flags().StringP("file", "f", "", "log the contents of this file")
 	NoticeCmd.Flags().StringP("priority", "p", "", "mark given message with this priority")
 	NoticeCmd.Flags().BoolP("skip-empty", "e", false, "do not log empty lines when processing files")
 	NoticeCmd.Flags().BoolP("stderr", "s", false, "output message to standard error as well")

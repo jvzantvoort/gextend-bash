@@ -19,7 +19,7 @@ var WarningCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(WarningCmd)
 	WarningCmd.Flags().StringP("tag", "t", "", "mark every line with this tag")
-	WarningCmd.Flags().StringP("file", "f", "output.log", "log the contents of this file")
+	WarningCmd.Flags().StringP("file", "f", "", "log the contents of this file")
 	WarningCmd.Flags().StringP("priority", "p", "", "mark given message with this priority")
 	WarningCmd.Flags().BoolP("skip-empty", "e", false, "do not log empty lines when processing files")
 	WarningCmd.Flags().BoolP("stderr", "s", false, "output message to standard error as well")
