@@ -5,21 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/jvzantvoort/gextend-bash/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 type LogMessage struct {
-	Tag       string    `json:"tag"`
-	File      string    `json:"-"`
-	Priority  string    `json:"priority"`
-	SkipEmpty bool      `json:"-"`
-	StdErr    bool      `json:"-"`
-	Message   string    `json:"message"`
-	Time      time.Time `json:"time"`
+	Tag                  string    `json:"tag"`
+	File                 string    `json:"-"`
+	Priority             string    `json:"priority"`
+	SkipEmpty            bool      `json:"-"`
+	StdErr               bool      `json:"-"`
+	Message              string    `json:"message"`
+	Time                 time.Time `json:"time"`
+	config.ConfigLogging `json:"-"`
 }
 
 type LogMessages struct {
@@ -89,6 +92,10 @@ func (l *LogMessage) ImportArgs(cmd *cobra.Command, args []string) {
 	l.StdErr, _ = cmd.Flags().GetBool("stderr")
 	l.SkipEmpty, _ = cmd.Flags().GetBool("skip-empty")
 	l.File = GetString(*cmd, "file")
+	if len(l.File) == 0 {
+		l.File, _ = l.ConfigLogging.LogfilePath()
+	}
+	log.Debugf("file is %s", l.File)
 
 	l.Tag = GetString(*cmd, "tag")
 	prio := GetString(*cmd, "priority")
@@ -97,7 +104,29 @@ func (l *LogMessage) ImportArgs(cmd *cobra.Command, args []string) {
 
 }
 
+// mkdir create directory
+func (l LogMessage) mkdir(path string) {
+	mode := 0755
+	finfo, err := os.Stat(path)
+	// we found something
+	if err == nil {
+		// already exists
+		if finfo.IsDir() {
+			log.Debugf("found dir: %s", path)
+			return
+		} else {
+			log.Errorf("found target: %s but it is not a directory", path)
+		}
+	}
+	mode_oct := os.FileMode(mode)
+	os.MkdirAll(path, mode_oct)
+
+}
+
 func (l LogMessage) Print() error {
+	// make parent dirs
+	l.mkdir(filepath.Dir(l.File))
+
 	fileh, err := os.OpenFile(l.File, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return err
@@ -126,6 +155,8 @@ func NewLogMessage(level string) *LogMessage {
 	retv := &LogMessage{}
 	retv.Time = time.Now()
 	retv.Priority = strings.ToUpper(level)
+	cfg := config.NewConfigLogging()
+	retv.ConfigLogging = *cfg
 
 	return retv
 }
