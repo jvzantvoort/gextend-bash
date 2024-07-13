@@ -1,347 +1,120 @@
-// Package config provides configuration data globally used
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
+	"os/user"
 	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 
-	"github.com/jvzantvoort/gextend-bash/utils"
 	log "github.com/sirupsen/logrus"
 )
 
+type Config struct {
+	AppName        string
+	HomeDir        string
+	ConfigDir      string
+	ConfigDirMode int
+}
+
 const (
-	SettingsFile string = "settings.json"
-	RegistryFile string = "registry.json"
+	ApplicationName string = "gextend-bash"
+	ConfigDirEnv    string = "XTRA_BASH_CONFIG_DIR"
+	ConfigDirName   string = "gextend-bash"
 )
 
-// UserConfig
-
-type UserConfig struct {
-	MailAddress string `json:"mailaddress"`
-	Company     string `json:"company"`
-	Copyright   string `json:"copyright"`
-	License     string `json:"license"`
-	User        string `json:"user"`
-	Username    string `json:"username"`
+func GetHomeDir() (string, error) {
+	usr, err := user.Current()
+	if err == nil {
+		return usr.HomeDir, nil
+	}
+	return "", err
 }
 
-// MainConfig configuration for gextend-bash
-type MainConfig struct {
-	ForceInit      bool
-	HomeDir        string
-	ArchiveDir     string
-	ConfigDir      string
-	TemplatesDir   string
-	ConfigDirPerms int
-	AppVersion     string     `json:"version"`
-	UserConfig     UserConfig `json:"user"`
+// ExpandHome expand the tilde in a given path.
+func ExpandHome(pathstr string) (string, error) {
+
+	if len(pathstr) == 0 {
+		return pathstr, nil
+	}
+
+	if pathstr[0] != '~' {
+		return pathstr, nil
+	}
+	HomeDir, _ := GetHomeDir()
+
+	return filepath.Join(HomeDir, pathstr[1:]), nil
+
 }
 
-func DefaultString(args ...string) string {
-	for _, def := range args {
-		if len(def) != 0 {
-			return def
+// prefix returns a prefix for logging and messages based on function name.
+func (c Config) prefix() string {
+	pc, _, _, _ := runtime.Caller(1)
+	elements := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	return fmt.Sprintf("%s.%s", c.AppName, elements[len(elements)-1])
+}
+
+// mkdir create directory
+func (c Config) mkdir(path string, mode int) {
+	log_prefix := c.prefix()
+	log.Debugf("%s: start", log_prefix)
+	defer log.Debugf("%s: end", log_prefix)
+
+	finfo, err := os.Stat(path)
+	// we found something
+	if err == nil {
+		// already exists
+		if finfo.IsDir() {
+			log.Debugf("found dir: %s", path)
+			return
+		} else {
+			log.Errorf("found target: %s but it is not a directory", path)
 		}
 	}
-	return ""
+	mode_oct := os.FileMode(mode)
+	os.MkdirAll(path, mode_oct)
+
 }
 
-func (u *UserConfig) SetMailAddress(args ...string) error {
-	newval := DefaultString(args...)
-	if len(newval) == 0 && len(u.MailAddress) == 0 {
-		return fmt.Errorf("MailAddress not set")
-	}
-	if len(newval) != 0 {
-		u.MailAddress = newval
+// SetDefaultHomeDir get the user's homedir
+func (c *Config) SetDefaultHomeDir() error {
+	if len(c.HomeDir) == 0 {
+		homedir, err := GetHomeDir()
+		c.HomeDir = homedir
+		return err
 	}
 	return nil
 }
 
-func (u *UserConfig) SetCompany(args ...string) error {
-	newval := DefaultString(args...)
-	if len(newval) == 0 && len(u.Company) == 0 {
-		return fmt.Errorf("company not set")
+func (c *Config) SetDefaultConfigDir() {
+	if len(c.ConfigDir) != 0 {
+		return
 	}
-	if len(newval) != 0 {
-		u.Company = newval
-	}
-	return nil
-}
 
-func (u *UserConfig) SetCopyright(args ...string) error {
-	newval := DefaultString(args...)
-	if len(newval) == 0 && len(u.Copyright) == 0 {
-		return fmt.Errorf("copyright not set")
-	}
-	if len(newval) != 0 {
-		u.Copyright = newval
-	}
-	return nil
-}
-
-func (u *UserConfig) SetLicense(args ...string) error {
-	newval := DefaultString(args...)
-	if len(newval) == 0 && len(u.License) == 0 {
-		return fmt.Errorf("license not set")
-	}
-	if len(newval) != 0 {
-		u.License = newval
-	}
-	return nil
-}
-
-func (u *UserConfig) SetUser(args ...string) error {
-	newval := DefaultString(args...)
-	if len(newval) == 0 && len(u.User) == 0 {
-		return fmt.Errorf("user not set")
-	}
-	if len(newval) != 0 {
-		u.User = newval
-	}
-	return nil
-}
-
-func (u *UserConfig) SetUsername(args ...string) error {
-	newval := DefaultString(args...)
-	if len(newval) == 0 && len(u.Username) == 0 {
-		return fmt.Errorf("username not set")
-	}
-	if len(newval) != 0 {
-		u.Username = newval
-	}
-	return nil
-}
-
-// GetHomeDir get the user's homedir
-func (m *MainConfig) GetHomeDir() string {
-	if len(m.HomeDir) != 0 {
-		return m.HomeDir
-	}
-	m.HomeDir = utils.GetHomeDir()
-
-	return m.HomeDir
-}
-
-func (m MainConfig) ConfigFile(name string) string {
-	return path.Join(m.ConfigDir, name)
-}
-
-func (m *MainConfig) GetConfigDir() string {
-	// return cached value
-	if len(m.ConfigDir) != 0 {
-		return m.ConfigDir
-	}
+	c.SetDefaultHomeDir()
 
 	// check environment variable
-	item_path, item_path_set := os.LookupEnv("GOPROJ_CONFIG_DIR")
+	item_path, item_path_set := os.LookupEnv(ConfigDirEnv)
 
 	if item_path_set {
-		m.ConfigDir = item_path
-		return m.ConfigDir
-	}
-
-	m.GetHomeDir()
-
-	m.ConfigDir = path.Join(m.HomeDir, ".config", "gextend-bash")
-
-	if runtime.GOOS == "windows" {
-		m.ConfigDir = path.Join(m.HomeDir, "GOProj")
-	}
-
-	return m.ConfigDir
-}
-
-func (m *MainConfig) GetTemplatesDir() string {
-	if len(m.TemplatesDir) != 0 {
-		return m.TemplatesDir
-	}
-	m.TemplatesDir = path.Join(m.GetConfigDir(), "templates.d")
-	return m.TemplatesDir
-}
-
-func (m *MainConfig) GetArchiveDir() string {
-	// return cached value
-	if len(m.ArchiveDir) != 0 {
-		return m.ArchiveDir
-	}
-
-	// check environment variable
-	item_path, item_path_set := os.LookupEnv("GOPROJ_ARCHIVE_DIR")
-
-	if item_path_set {
-		m.ArchiveDir = item_path
-		return m.ArchiveDir
-	}
-
-	m.GetHomeDir()
-
-	m.ArchiveDir = path.Join(m.HomeDir, "Archive", "gextend-bash")
-
-	if runtime.GOOS == "windows" {
-		m.ArchiveDir = path.Join(m.HomeDir, "GOProjArchive")
-	}
-
-	return m.ArchiveDir
-}
-
-// Init initialize the MainConfig struct
-func (m *MainConfig) Init() {
-
-	m.GetHomeDir()
-
-	m.GetConfigDir()
-
-	m.GetArchiveDir()
-
-	m.GetTemplatesDir()
-
-	if runtime.GOOS == "windows" {
-		m.ConfigDirPerms = 0777
+		c.ConfigDir = item_path
 	} else {
-		m.ConfigDirPerms = 0755
-	}
-
-	if !m.ForceInit {
-		m.ReadFromFile(SettingsFile)
+		c.ConfigDir = path.Join(c.HomeDir, ".config", ConfigDirName)
+		c.mkdir(c.ConfigDir, c.ConfigDirMode) // make sure the directory exists
 	}
 }
 
-func (m MainConfig) Save() {
-	log.Debugf("Write to %s", SettingsFile)
-	defer log.Debugf("Write to %s, end", SettingsFile)
-	m.WriteToFile(SettingsFile)
+func (c *Config) Initialize() {
+	c.AppName = ApplicationName
+	c.ConfigDirMode = 0755
+	c.SetDefaultHomeDir()
+	c.SetDefaultConfigDir()
 }
 
-// CreateDirs create the main config dir
-func (m MainConfig) CreateDirs() {
-	mode := m.ConfigDirPerms
-
-	err := utils.MkdirP(m.ConfigDir, int(mode))
-	if err != nil {
-		log.Errorf("Failed to create dir %s, %v", m.ConfigDir, err)
-	}
-
-	err = utils.MkdirP(m.ArchiveDir, int(mode))
-	if err != nil {
-		log.Errorf("Failed to create dir %s, %v", m.ArchiveDir, err)
-	}
-
-	err = utils.MkdirP(m.TemplatesDir, int(mode))
-	if err != nil {
-		log.Errorf("Failed to create dir %s, %v", m.TemplatesDir, err)
-	}
-}
-
-// File handling
-//
-// Read
-func (m *MainConfig) Read(reader io.Reader) error {
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(data, &m)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Write
-func (m MainConfig) Write(writer io.Writer) error {
-	jsonString, err := json.MarshalIndent(m, "", "  ")
-	if err == nil {
-		fmt.Fprint(writer, string(jsonString))
-		fmt.Fprintf(writer, "\n")
-	}
-	return err
-
-}
-
-// ReadFromFile
-func (m *MainConfig) ReadFromFile(name string) error {
-
-	fileh, err := os.Open(m.ConfigFile(name))
-
-	if err != nil {
-		return err
-	}
-	defer fileh.Close()
-
-	return m.Read(fileh)
-}
-
-// WriteToFile
-func (m MainConfig) WriteToFile(name string) error {
-	log.Debugf("save to: %s, start", m.ConfigFile(name))
-	defer log.Debugf("save to: %s, end", m.ConfigFile(name))
-
-	fileh, err := os.OpenFile(m.ConfigFile(name), os.O_WRONLY|os.O_CREATE, 0644)
-
-	if err != nil {
-		return err
-	}
-	defer fileh.Close()
-	return m.Write(fileh)
-}
-
-func (m *MainConfig) ResetConfig() {
-	m.ForceInit = true
-	m.Init()
-	m.CreateDirs()
-}
-
-func (m *MainConfig) Get(name string) (string, error) {
-	switch name {
-	case "version":
-		return m.AppVersion, nil
-	case "user.mailaddress":
-		return m.UserConfig.MailAddress, nil
-	case "user.company":
-		return m.UserConfig.Company, nil
-	case "user.copyright":
-		return m.UserConfig.Copyright, nil
-	case "user.license":
-		return m.UserConfig.License, nil
-	case "user.user":
-		return m.UserConfig.User, nil
-	case "user.username":
-		return m.UserConfig.Username, nil
-	default:
-		return "", fmt.Errorf("illegal field: %s", name)
-	}
-}
-
-func (m MainConfig) Fields() []string {
-	fields := []string{}
-	fields = append(fields, "version")
-	fields = append(fields, "user.mailaddress")
-	fields = append(fields, "user.company")
-	fields = append(fields, "user.copyright")
-	fields = append(fields, "user.license")
-	fields = append(fields, "user.user")
-	fields = append(fields, "user.username")
-	return fields
-}
-
-// NewMainConfig initialize a MainConfig and initialize it.
-//
-//	mc := config.NewMainConfig()
-//	fmt.Printf("config dir: %s\n", mc.ConfigDir)
-func NewMainConfig() *MainConfig {
-	retv := &MainConfig{}
-	retv.ForceInit = false
-
-	retv.Init()
-
-	retv.CreateDirs()
-
+func NewConfig() *Config {
+	retv := &Config{}
+	retv.Initialize()
 	return retv
-
 }
