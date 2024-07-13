@@ -144,7 +144,7 @@ function test_result()
   fi
 }
 
-function retv_fatal()
+function test_fatal()
 {
   local retv=$1
   local message=$2
@@ -157,7 +157,7 @@ function retv_fatal()
   fi
 }
 
-function die() { retv_fatal 1 "FATAL: $1"; }
+function die() { test_fatal 1 "FATAL: $1"; }
 
 # }}}
 
@@ -213,17 +213,22 @@ function action_build()
   local goos="$1"
   local arch="$2"
   local dest
+  local exitcode
 
-  list_binaries | while read -r target
+  exitcode=0
+
+  while read -r target
   do
     dest="$(__calcdest "${goos}" "${arch}" "${target}")"
 
     GOOS=${goos} GOARCH=${arch} \
       go  build -ldflags "${LDFLAGS}" \
       -o "${dest}" "./cmd/${target}"
-
-    test_result "$?" "    ${target}"
-  done
+    retv="$?"
+    test_result "$retv" "    ${target}"
+    [[ "${retv}" == "0" ]] || exitcode=$((exitcode+1))
+  done < <(list_binaries)
+  test_fatal "${exitcode}" "build results"
 }
 
 function action_dependencies()
