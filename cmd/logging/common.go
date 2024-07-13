@@ -30,5 +30,9 @@ func handleLogCmd(cmd *cobra.Command, args []string) {
 	}
 	logmsg := logging.NewLogMessage(cmd.Use)
 	logmsg.ImportArgs(cmd, args)
-	logmsg.Print()
+	err := logmsg.Print()
+	if err != nil {
+		log.Error(err)
+
+	}
 }
