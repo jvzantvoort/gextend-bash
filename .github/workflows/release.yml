@@ -43,6 +43,7 @@ jobs:
             while read -r target; do \
              go build -trimpath -o $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }} ./cmd/${target}; \
             done
+          cp gextend-bash-update $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }}/gextend-bash-update
 
       - name: Create package
         id: package
