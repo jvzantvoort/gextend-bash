@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -26,7 +27,7 @@ type LogMessage struct {
 }
 
 type LogMessages struct {
-	messages []LogMessage
+	Messages []LogMessage
 }
 
 func GetString(cmd cobra.Command, name string) string {
@@ -174,8 +175,13 @@ func NewLogMessages(inputfile string) *LogMessages {
 	for scanner.Scan() {
 		obj := &LogMessage{}
 		json.Unmarshal([]byte(scanner.Bytes()), &obj)
-		retv.messages = append(retv.messages, *obj)
+		retv.Messages = append(retv.Messages, *obj)
 	}
+
+	// Sort in ascending order
+	sort.Slice(retv.Messages, func(i, j int) bool {
+		return retv.Messages[i].Time.Before(retv.Messages[j].Time)
+	})
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
