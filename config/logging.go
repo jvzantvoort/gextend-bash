@@ -29,6 +29,7 @@ type ConfigLogging struct {
 	AppName        string    `ini:"-"`
 	ConfigFile     string    `ini:"-"`
 	TemplateFields []string  `ini:"-"`
+	Hostname   string    `ini:"-"`
 	Now            time.Time `ini:"-"`
 	Config         `ini:"-"`
 	SectLogging    `ini:"main"`
@@ -210,6 +211,7 @@ func (cl *ConfigLogging) Initialize() {
 	} else {
 		log.Debugf("  try to read config file, success")
 	}
+	cl.Hostname = utils.ShortHostname()
 	cl.SectLogging.InitializeVariableFields()
 
 }
