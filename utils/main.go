@@ -5,7 +5,14 @@ import (
 	"os"
 	"os/user"
 	"runtime"
+	"strings"
 )
+
+func ShortHostname() string {
+	fqdn, _ := os.Hostname()
+	parts := strings.Split(fqdn, ".")
+	return strings.ToLower(parts[0])
+}
 
 // GetHomeDir get the user's homedir
 func GetHomeDir() string {
