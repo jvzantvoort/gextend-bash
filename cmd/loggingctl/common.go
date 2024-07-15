@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/jvzantvoort/gextend-bash/logging"
@@ -15,11 +14,6 @@ func GetString(cmd cobra.Command, name string) string {
 		log.Infof("Found %s as %s", name, retv)
 	}
 	return retv
-}
-
-func dump(data interface{}) {
-	b, _ := json.MarshalIndent(data, "", "  ")
-	fmt.Print(string(b))
 }
 
 func handleLogCmd(cmd *cobra.Command, args []string) {
