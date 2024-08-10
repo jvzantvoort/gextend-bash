@@ -24,8 +24,9 @@ jobs:
 
     - name: Build
       run: |
-        go build -v -o build/logging ./cmd/logging
-        go build -v -o build/print_status ./cmd/print_status
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/logging ./cmd/logging
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/print_status ./cmd/print_status
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/cprint ./cmd/cprint
 
     - name: Run go vet
       run: go vet ./...
