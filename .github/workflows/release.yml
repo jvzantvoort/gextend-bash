@@ -41,7 +41,7 @@ jobs:
         run: |
           find cmd -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | \
             while read -r target; do \
-             go build -trimpath -o $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }} ./cmd/${target}; \
+             CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch  }} go build -trimpath -o $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }} ./cmd/${target}; \
             done
           cp gextend-bash-update $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }}/gextend-bash-update
 
