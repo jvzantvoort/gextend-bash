@@ -92,7 +92,7 @@ The result is the original moved and the second version moved to a ``.1`` file:
 total 8
 -rw-r--r--. 1 jvzantvoort jvzantvoort 13 Aug 10 21:03 tempfile
 -rw-r--r--. 1 jvzantvoort jvzantvoort 13 Aug 10 21:04 tempfile.1
-
+```
 
 ### path_clean
 
