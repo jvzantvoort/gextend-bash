@@ -27,6 +27,7 @@ jobs:
         CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/logging ./cmd/logging
         CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/print_status ./cmd/print_status
         CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/cprint ./cmd/cprint
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/path_clean ./cmd/path_clean
 
     - name: Run go vet
       run: go vet ./...
