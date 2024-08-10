@@ -24,7 +24,7 @@ func PrintFatal(fmtstr string, err error) error {
 
 // PanicOnError missing godoc.
 func PanicOnError(fmtstr string, err error) {
-	PrintError(fmtstr, err)
+	err = PrintError(fmtstr, err)
 	if err != nil {
 		panic(err)
 	}
