@@ -105,3 +105,7 @@ Alias for cprint
 ### today
 
 Returns "vYYWW.<dow>" as a timestamp
+
+### mdtoc
+
+Generate the toc for a markdown file
