@@ -18,7 +18,7 @@ func ReadSshConfig() ([]string, error) {
 	}
 
 	if _, err := os.Stat(fpath); os.IsNotExist(err) {
-		return retv, fmt.Errorf("File %s does not exist", fpath)
+		return retv, fmt.Errorf("file %s does not exist", fpath)
 	}
 
 	sshConfigLines, err := readFileAsList(fpath)
@@ -48,9 +48,7 @@ func ReadHostsFile() ([]string, error) {
 	for _, line := range hostsLines {
 		columns := strings.Split(line, " ")
 		columns = columns[:len(columns)-1]
-		for _, column := range columns {
-			retv = append(retv, column)
-		}
+		retv = append(retv, columns...)
 	}
 	return retv, nil
 }
