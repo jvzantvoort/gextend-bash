@@ -69,7 +69,10 @@ func (c Config) mkdir(path string) {
 		}
 	}
 	mode_oct := os.FileMode(ConstDirMode)
-	os.MkdirAll(path, mode_oct)
+	err = os.MkdirAll(path, mode_oct)
+	if err != nil {
+		log.Errorf("directory cannot be created: %s", path)
+	}
 
 }
 
@@ -89,7 +92,10 @@ func (c *Config) SetDefaultConfigDir() {
 		return
 	}
 
-	c.SetDefaultHomeDir()
+	err := c.SetDefaultHomeDir()
+	if err != nil {
+		log.Errorf("SetDefaultHomeDir failed: %s", err)
+	}
 
 	// check environment variable
 	item_path, item_path_set := os.LookupEnv(ConfigDirEnv)
@@ -105,7 +111,9 @@ func (c *Config) SetDefaultConfigDir() {
 // Initialize missing godoc.
 func (c *Config) Initialize() {
 	c.AppName = ApplicationName
-	c.SetDefaultHomeDir()
+	if err := c.SetDefaultHomeDir(); err != nil {
+		log.Errorf("SetDefaultHomeDir failed: %s", err)
+	}
 	c.SetDefaultConfigDir()
 }
 
