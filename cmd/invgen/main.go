@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/goombaio/namegenerator"
+	log "github.com/sirupsen/logrus"
 )
 
 type Host struct {
@@ -56,10 +58,43 @@ var Purpose = []string{
 	"test",
 }
 
+func init() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp:          true,
+		DisableLevelTruncation: true,
+		TimestampFormat:        "2006-01-02 15:04:05",
+	})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
+
+	// Only log the warning severity or above.
+	log.SetLevel(log.InfoLevel)
+
+}
+
+func LogIfError(msg interface{}) {
+	if msg == nil {
+		return
+	}
+	pc, _, _, _ := runtime.Caller(1)
+	elements := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	log.Errorf("%s: return not nil: %s", elements[len(elements)-1], msg)
+}
+func LogIfWriteError(n int, err error) {
+	if err == nil {
+		return
+	}
+	pc, _, _, _ := runtime.Caller(1)
+	elements := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+	log.Errorf("%s: return not nil: %s", elements[len(elements)-1], err)
+}
+
 func mkdirRecursive(directory string) {
 	_, err := os.Stat(directory)
 	if os.IsNotExist(err) {
-		os.MkdirAll(directory, 0755)
+		LogIfError(os.MkdirAll(directory, 0755))
 	}
 }
 
@@ -79,9 +114,9 @@ func printMkDirPerListItem(prefix string, fields []string) {
 			return
 		}
 		defer w.Close()
-		w.WriteString("---\n")
-		w.WriteString(fmt.Sprintf("%s_token: %s\n", prefix, field))
-		w.WriteString("...\n")
+		LogIfWriteError(w.WriteString("---\n"))
+		LogIfWriteError(w.WriteString(fmt.Sprintf("%s_token: %s\n", prefix, field)))
+		LogIfWriteError(w.WriteString("...\n"))
 
 	}
 }
@@ -111,9 +146,9 @@ func printMkDirPerLocation() {
 			return
 		}
 		defer w.Close()
-		w.WriteString("---\n")
-		w.WriteString(fmt.Sprintf("%s_token: %s\n", prefix, field))
-		w.WriteString("...\n")
+		LogIfWriteError(w.WriteString("---\n"))
+		LogIfWriteError(w.WriteString(fmt.Sprintf("%s_token: %s\n", prefix, field)))
+		LogIfWriteError(w.WriteString("...\n"))
 
 	}
 }
@@ -163,20 +198,6 @@ func groupHostsByPurpose(hosts []Host) map[string][]string {
 	return groupHostsByFields(hosts, "p", []string{"Purpose"})
 }
 
-func printGroup(group map[string][]string, priority int) {
-
-	for continent, names := range group {
-		fmt.Printf("%s:\n", continent)
-		fmt.Printf("  vars:\n")
-		fmt.Printf("    ansible_group_priority: %d\n", priority)
-		fmt.Printf("  hosts:\n")
-		for _, hn := range names {
-			fmt.Printf("    %s:\n", hn)
-		}
-	}
-
-}
-
 func writeGroup(w *os.File, group map[string][]string, priority int) {
 	for continent, names := range group {
 		fmt.Fprintf(w, "%s:\n", continent)
@@ -190,13 +211,13 @@ func writeGroup(w *os.File, group map[string][]string, priority int) {
 }
 
 func RandomFromList(inlist []string) string {
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 	return inlist[rand.Intn(len(inlist))]
 }
 
 // Generate a random location slice
 func randomLocation() []string {
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 
 	// Get random continent key
 	keys := make([]string, 0, len(locations))
@@ -243,9 +264,9 @@ func writeHostsFile(outputfile string, hosts []Host) {
 	}
 	defer w.Close()
 
-	w.WriteString("---\n")
-	w.WriteString("all:\n")
-	w.WriteString("  hosts:\n")
+	LogIfWriteError(w.WriteString("---\n"))
+	LogIfWriteError(w.WriteString("all:\n"))
+	LogIfWriteError(w.WriteString("  hosts:\n"))
 	for _, host := range hosts {
 		writeHost(w, &host)
 	}
