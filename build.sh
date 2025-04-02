@@ -39,6 +39,8 @@ Build:
     install
     package
     cleanup
+    check
+    list
 
 HELP
 )
@@ -139,6 +141,9 @@ function test_result()
   if [[ "${retv}" == "0" ]]
   then
     print_ok "${message}"
+  elif [[ "${retv}" == "127" ]]
+  then
+    print_nok "${message} (not found)"
   else
     print_nok "${message}"
   fi
@@ -221,6 +226,7 @@ function action_build()
   do
     dest="$(__calcdest "${goos}" "${arch}" "${target}")"
 
+    CGO_ENABLED=0 \
     GOOS=${goos} GOARCH=${arch} \
       go  build -ldflags "${LDFLAGS}" \
       -o "${dest}" "./cmd/${target}"
@@ -261,13 +267,18 @@ function action_dependencies()
 
 function action_install()
 {
+  local goos="$1"
+  local arch="$2"
   local bindir
   bindir="$(go env GOBIN)"
-  list_binaries | while read -r target
+
+  while read -r target
   do
-    install -m 755 "${C_BUILDDIR}/${target}" "${bindir}/${target}"
+    local dest
+    dest="$(__calcdest "${goos}" "${arch}" "${target}")"
+    install -m 755 "${dest}" "${bindir}/${target}"
     test_result "$?" "    ${target}"
-  done
+  done < <(list_binaries)
 }
 
 function action_package()
@@ -319,6 +330,46 @@ function action_cleanup()
 
 }
 
+function action_check()
+{
+  pushd "${C_SCRIPTDIR}" >/dev/null 2>&1 || die "cannot changedir to scriptdir"
+
+  go vet ./...
+  test_result "$?" "go vet"
+
+  local goroot
+  goroot="$(go env GOROOT)"
+
+  golangci-lint run --skip-dirs "${goroot}" ./...
+  test_result "$?" "golangci-lint"
+
+  staticcheck ./...
+  test_result "$?" "staticcheck"
+
+  # go install golang.org/x/tools/cmd/deadcode@latest
+  deadcode ./...
+  test_result "$?" "deadcode"
+
+  popd >/dev/null 2>&1 || die "cannot changedir back"
+
+}
+
+function action_list()
+{
+  pushd "${C_SCRIPTDIR}" >/dev/null 2>&1 || die "cannot changedir to scriptdir"
+
+  find "${C_SCRIPTDIR}" -mindepth 1 -maxdepth 1 -type d \
+    -not -name '.git*' -not -name build -not -name vendor \
+    -printf "%f\n" | sort | while read -r target
+    do
+      find "${target}" -type f
+    done
+  find "${C_SCRIPTDIR}" -mindepth 1 -maxdepth 1 -type f \
+    -name '*.go'
+  popd >/dev/null 2>&1 || die "cannot changedir back"
+
+}
+
 # }}}
 
 # interfaces {{{
@@ -332,7 +383,10 @@ function do_build()
   action_dependencies
   action_build "$(go env GOOS)" "$(go env GOARCH)"
 }
-function do_install() { print_title "install locally"; action_install; }
+function do_install() {
+  print_title "install locally"
+  action_install "$(go env GOOS)" "$(go env GOARCH)"
+}
 function do_package() { print_title "create packages"; action_createpackages; }
 function do_usage()
 {
@@ -341,6 +395,8 @@ function do_usage()
   printf "\n\n"
   exit 0
 }
+function do_check() { print_title "check the sources"; action_check; }
+function do_list() { action_list; }
 # }}}
 
 #------------------------------------------------------------------------------#
@@ -350,11 +406,13 @@ function do_usage()
 case "$1" in
   fmt)     do_fmt          ;;
   tags)    do_tags         ;;
-  cleanup) do_cleanup      ;;
   build)   do_build        ;;
+  update)  do_dependencies ;;
   install) do_install      ;;
   package) do_package      ;;
-  update)  do_dependencies ;;
+  cleanup) do_cleanup      ;;
+  check)   do_check        ;;
+  list)    do_list         ;;
   help)    do_usage        ;;
   *)       do_usage        ;;
 esac

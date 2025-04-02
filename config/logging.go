@@ -130,7 +130,10 @@ func (cl ConfigLogging) Write() error {
 		return err
 	}
 	mode_oct := os.FileMode(ConstFileMode)
-	os.Chmod(cl.ConfigFile, mode_oct)
+	err = os.Chmod(cl.ConfigFile, mode_oct)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -207,7 +210,10 @@ func (cl *ConfigLogging) Initialize() {
 		log.Debugf("  Initialzed SectLogging")
 		cl.SectLogging = *sect_logging
 		log.Debugf("  Initialzed SectLogging")
-		cl.Write()
+		retv = cl.Write()
+		if retv != nil {
+			log.Errorf("Error: %s", retv)
+		}
 	} else {
 		log.Debugf("  try to read config file, success")
 	}

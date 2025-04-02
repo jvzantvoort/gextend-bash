@@ -120,7 +120,9 @@ func (l LogMessage) mkdir(path string) {
 		}
 	}
 	mode_oct := os.FileMode(mode)
-	os.MkdirAll(path, mode_oct)
+	if err := os.MkdirAll(path, mode_oct); err != nil {
+		log.Errorf("directory cannot be created: %s", path)
+	}
 
 }
 
@@ -174,8 +176,10 @@ func NewLogMessages(inputfile string) *LogMessages {
 	// optionally, resize scanner's capacity for lines over 64K, see next example
 	for scanner.Scan() {
 		obj := &LogMessage{}
-		json.Unmarshal([]byte(scanner.Bytes()), &obj)
-		retv.Messages = append(retv.Messages, *obj)
+		if err := json.Unmarshal([]byte(scanner.Bytes()), &obj); err != nil {
+			log.Errorf("Error: %s", err)
+		}
+		retv.messages = append(retv.messages, *obj)
 	}
 
 	// Sort in ascending order

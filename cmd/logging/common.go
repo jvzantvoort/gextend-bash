@@ -25,7 +25,9 @@ func handleLogCmd(cmd *cobra.Command, args []string) {
 
 	if len(args) == 0 {
 		log.Error("No message provided")
-		cmd.Help()
+		if err := cmd.Help(); err != nil {
+			log.Error(err)
+		}
 		os.Exit(1)
 	}
 	logmsg := logging.NewLogMessage(cmd.Use)

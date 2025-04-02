@@ -24,8 +24,16 @@ jobs:
 
     - name: Build
       run: |
-        go build -v -o build/logging ./cmd/logging
-        go build -v -o build/print_status ./cmd/print_status
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/cprint ./cmd/cprint
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/logging ./cmd/logging
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/mvx ./cmd/mvx
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/path_clean ./cmd/path_clean
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/print_status ./cmd/print_status
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/today ./cmd/today
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/mdtoc ./cmd/mdtoc
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/achelper ./cmd/achelper
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/namegen ./cmd/namegen
+        CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/invgen ./cmd/invgen
 
     - name: Run go vet
       run: go vet ./...
