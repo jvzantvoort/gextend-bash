@@ -28,11 +28,11 @@ var (
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp:   false,
-		DisableTimestamp: true,
+		FullTimestamp:          false,
+		DisableTimestamp:       true,
 		DisableLevelTruncation: true,
-		PadLevelText: true,
-//		TimestampFormat: "2006-01-02 15:04:05",
+		PadLevelText:           true,
+		//		TimestampFormat: "2006-01-02 15:04:05",
 	})
 
 	// Output to stdout instead of the default stderr
@@ -164,8 +164,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	DestTarget := arguments[arg_indx - 1]
-	SourceTargets := arguments[:arg_indx -1]
+	DestTarget := arguments[arg_indx-1]
+	SourceTargets := arguments[:arg_indx-1]
 
 	LogDebugf("Sources: %s", strings.Join(SourceTargets, ", "))
 	LogDebugf("Destination: %s", DestTarget)

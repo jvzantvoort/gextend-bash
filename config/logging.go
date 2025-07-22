@@ -29,9 +29,21 @@ type ConfigLogging struct {
 	AppName        string    `ini:"-"`
 	ConfigFile     string    `ini:"-"`
 	TemplateFields []string  `ini:"-"`
+	Hostname       string    `ini:"-"`
 	Now            time.Time `ini:"-"`
 	Config         `ini:"-"`
 	SectLogging    `ini:"main"`
+}
+
+func TmplLookupEnv(variablename string, args ...string) string {
+	retv, ok := os.LookupEnv(variablename)
+	if ok {
+		return retv
+	}
+	if len(args) == 0 {
+		return ""
+	}
+	return args[0]
 }
 
 // prefix returns a prefix for logging and messages based on function name.
@@ -45,8 +57,11 @@ func (cl ConfigLogging) prefix() string {
 func (cl ConfigLogging) Parse(templatestring string) (string, error) {
 	var retv string
 	buf := new(bytes.Buffer)
+	funcMap := template.FuncMap{
+		"env": TmplLookupEnv,
+	}
 
-	tmpl, err := template.New("template").Parse(templatestring)
+	tmpl, err := template.New("template").Funcs(funcMap).Parse(templatestring)
 	if err != nil {
 		log.Errorf("Error: %s", err)
 		return templatestring, err
@@ -202,6 +217,7 @@ func (cl *ConfigLogging) Initialize() {
 	} else {
 		log.Debugf("  try to read config file, success")
 	}
+	cl.Hostname = utils.ShortHostname()
 	cl.SectLogging.InitializeVariableFields()
 
 }
