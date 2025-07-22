@@ -29,7 +29,7 @@ type ConfigLogging struct {
 	AppName        string    `ini:"-"`
 	ConfigFile     string    `ini:"-"`
 	TemplateFields []string  `ini:"-"`
-	Hostname   string    `ini:"-"`
+	Hostname       string    `ini:"-"`
 	Now            time.Time `ini:"-"`
 	Config         `ini:"-"`
 	SectLogging    `ini:"main"`

@@ -183,8 +183,8 @@ func NewLogMessages(inputfile string) *LogMessages {
 	}
 
 	// Sort in ascending order
-	sort.Slice(retv.Messages, func(i, j int) bool {
-		return retv.Messages[i].Time.Before(retv.Messages[j].Time)
+	sort.Slice(retv.messages, func(i, j int) bool {
+		return retv.messages[i].Time.Before(retv.messages[j].Time)
 	})
 
 	if err := scanner.Err(); err != nil {
