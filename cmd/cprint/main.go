@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
 	"github.com/jvzantvoort/gextend-bash/colors"
 )
 

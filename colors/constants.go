@@ -1,4 +1,5 @@
 package colors
+
 const (
 	EXCLAMATION_MARK       = '\u0021'
 	LEFT_PNT_DB_QUOT_MARK  = '\u00ab'

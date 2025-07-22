@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -180,6 +181,11 @@ func NewLogMessages(inputfile string) *LogMessages {
 		}
 		retv.messages = append(retv.messages, *obj)
 	}
+
+	// Sort in ascending order
+	sort.Slice(retv.messages, func(i, j int) bool {
+		return retv.messages[i].Time.Before(retv.messages[j].Time)
+	})
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)

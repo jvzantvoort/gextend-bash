@@ -11,8 +11,8 @@ import (
 
 // Heading represents a markdown heading
 type Heading struct {
-	Level int
-	Text  string
+	Level  int
+	Text   string
 	Anchor string
 }
 
@@ -20,7 +20,7 @@ type Heading struct {
 func generateAnchor(text string) string {
 	anchor := strings.ToLower(text)
 	anchor = regexp.MustCompile(`[^a-z0-9\s-]`).ReplaceAllString(anchor, "") // Remove special characters
-	anchor = strings.ReplaceAll(anchor, " ", "-")                             // Replace spaces with dashes
+	anchor = strings.ReplaceAll(anchor, " ", "-")                            // Replace spaces with dashes
 	return anchor
 }
 
@@ -83,4 +83,3 @@ func main() {
 	toc := generateTOC(headings)
 	fmt.Println(toc)
 }
-

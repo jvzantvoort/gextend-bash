@@ -1,3 +1,4 @@
+// Package utils provides general utility functions for file, directory, and system operations.
 package utils
 
 import (
@@ -5,9 +6,17 @@ import (
 	"os"
 	"os/user"
 	"runtime"
+	"strings"
 )
 
-// GetHomeDir get the user's homedir
+// ShortHostname returns the short hostname (first part of the FQDN) in lowercase.
+func ShortHostname() string {
+	fqdn, _ := os.Hostname()
+	parts := strings.Split(fqdn, ".")
+	return strings.ToLower(parts[0])
+}
+
+// GetHomeDir returns the current user's home directory.
 func GetHomeDir() string {
 	usr, err := user.Current()
 	if err != nil {
@@ -16,7 +25,8 @@ func GetHomeDir() string {
 	return usr.HomeDir
 }
 
-// MkdirP
+// MkdirP creates a directory and all necessary parents with the specified mode.
+// Returns an error if the directory cannot be created or if a non-directory file exists at the path.
 //
 //	err := utils.MkdirP("/lala", int(0755))
 //	if err != nil {
@@ -39,7 +49,8 @@ func MkdirP(dirname string, mode int) error {
 	return nil
 }
 
-// FileExists check if a target exists and is a file.
+// FileExists checks if the target exists and is a file.
+// Returns true and the file info if it exists and is a file, otherwise false.
 //
 //	check, info := utils.FileExists("/etc/passwd")
 //	if check {
@@ -59,7 +70,8 @@ func FileExists(fpath string) (bool, os.FileInfo) {
 	return true, info
 }
 
-// FileIsExecutable file exists and is executable
+// FileIsExecutable checks if the file exists and is executable by owner, group, or others.
+// On Windows, returns true if the file exists.
 func FileIsExecutable(fpath string) bool {
 	exists, info := FileExists(fpath)
 	if !exists {
