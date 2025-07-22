@@ -179,12 +179,12 @@ func NewLogMessages(inputfile string) *LogMessages {
 		if err := json.Unmarshal([]byte(scanner.Bytes()), &obj); err != nil {
 			log.Errorf("Error: %s", err)
 		}
-		retv.messages = append(retv.messages, *obj)
+		retv.Messages = append(retv.Messages, *obj)
 	}
 
 	// Sort in ascending order
-	sort.Slice(retv.messages, func(i, j int) bool {
-		return retv.messages[i].Time.Before(retv.messages[j].Time)
+	sort.Slice(retv.Messages, func(i, j int) bool {
+		return retv.Messages[i].Time.Before(retv.Messages[j].Time)
 	})
 
 	if err := scanner.Err(); err != nil {
