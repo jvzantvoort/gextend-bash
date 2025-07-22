@@ -1,3 +1,4 @@
+// Package utils provides terminal screen utilities for formatting and displaying text boxes and centered lines.
 package utils
 
 import (
@@ -9,13 +10,15 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 )
 
+// winsize represents the size of the terminal window.
 type winsize struct {
-	Row    uint16
-	Col    uint16
-	Xpixel uint16
-	Ypixel uint16
+	Row    uint16 // Number of rows
+	Col    uint16 // Number of columns
+	Xpixel uint16 // Width in pixels
+	Ypixel uint16 // Height in pixels
 }
 
+// getWidth returns the width of the terminal in columns.
 func getWidth() int {
 	ws := &winsize{}
 	retCode, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
@@ -29,21 +32,7 @@ func getWidth() int {
 	return int(ws.Col)
 }
 
-/*
-func getHeight() int {
-	ws := &winsize{}
-	retCode, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(syscall.Stdin),
-		uintptr(syscall.TIOCGWINSZ),
-		uintptr(unsafe.Pointer(ws)))
-
-	if int(retCode) == -1 {
-		panic(errno)
-	}
-	return int(ws.Row)
-}
-*/
-
+// CenterLine centers a line of text within the given width.
 func CenterLine(line string, width int) string {
 	line = strings.TrimSpace(line)
 
@@ -54,6 +43,7 @@ func CenterLine(line string, width int) string {
 	return retv
 }
 
+// TextBox prints a formatted text box with a title and message, wrapping the message as needed.
 func TextBox(title, format string, args ...interface{}) {
 	boxwidth := int(60)
 	msg := format
@@ -80,6 +70,7 @@ func TextBox(title, format string, args ...interface{}) {
 
 }
 
+// ErrorBox prints a text box with the title "Error" and the provided message.
 func ErrorBox(format string, args ...interface{}) {
 	TextBox("Error", format, args...)
 }

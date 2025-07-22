@@ -1,10 +1,12 @@
+// Package utils provides utility functions for error printing and handling.
 package utils
 
 import (
 	log "github.com/sirupsen/logrus"
 )
 
-// PrintError if err is not nil print fmtstr as error.
+// PrintError prints an error message using the provided format string if err is not nil.
+// Returns the error for further handling.
 func PrintError(fmtstr string, err error) error {
 	if err == nil {
 		return err
@@ -13,7 +15,8 @@ func PrintError(fmtstr string, err error) error {
 	return err
 }
 
-// PrintFatal missing godoc.
+// PrintFatal prints a fatal error message and exits if err is not nil.
+// Returns the error for further handling.
 func PrintFatal(fmtstr string, err error) error {
 	if err == nil {
 		return err
@@ -22,7 +25,7 @@ func PrintFatal(fmtstr string, err error) error {
 	return err
 }
 
-// PanicOnError missing godoc.
+// PanicOnError prints an error and panics if err is not nil.
 func PanicOnError(fmtstr string, err error) {
 	err = PrintError(fmtstr, err)
 	if err != nil {

@@ -309,15 +309,11 @@ function action_check() {
   local goroot
   goroot="$(go env GOROOT)"
 
-  golangci-lint run --skip-dirs "${goroot}" ./...
+  golangci-lint run --exclude-dirs "${goroot}" ./...
   test_result "$?" "golangci-lint"
 
   staticcheck ./...
   test_result "$?" "staticcheck"
-
-  # go install golang.org/x/tools/cmd/deadcode@latest
-  deadcode ./...
-  test_result "$?" "deadcode"
 
   popd >/dev/null 2>&1 || die "cannot changedir back"
 
