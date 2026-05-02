@@ -16,7 +16,7 @@ func AbortMe() {
 		fmt.Fprintf(os.Stderr, "%s", err)
 		msgstr = []byte("undefined")
 	}
-	fmt.Fprintf(os.Stderr, string(msgstr))
+	fmt.Fprintf(os.Stderr, "%s", string(msgstr))
 	os.Exit(1)
 }
 
