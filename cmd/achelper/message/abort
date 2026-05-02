@@ -1,0 +1,5 @@
+achelper or auto complete helper provides bash auto complete content for know options.
+
+Currently supported:
+
+- ssh
