@@ -3,6 +3,9 @@ name: Release
 on:
   release:
     types: [published]
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   release:
@@ -21,10 +24,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
 
       - name: Download dependencies
         run: |
