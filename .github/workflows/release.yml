@@ -35,8 +35,7 @@ jobs:
           cache: true
 
       - name: Download dependencies
-        run: |
-          go mod download
+        run: go mod download
 
       - name: Prepare build directory
         run: |
@@ -56,16 +55,22 @@ jobs:
       - name: Create package
         id: package
         run: |
-          PACKAGE_NAME=gextend-bash.${GITHUB_REF#refs/tags/}.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
+          VERSION=${GITHUB_REF#refs/tags/}
+          PACKAGE_NAME=gextend-bash.${VERSION}.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
           tar -czvf $PACKAGE_NAME -C build/${{ matrix.goos }}.${{ matrix.goarch }} .
-          echo ::set-output name=name::${PACKAGE_NAME}
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Upload asset
-        uses: actions/upload-release-asset@v1
+      - name: Generate checksum
+        run: |
+          sha256sum ${{ steps.package.outputs.name }} > ${{ steps.package.outputs.name }}.sha256
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v3
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            ${{ steps.package.outputs.name }}
+            ${{ steps.package.outputs.name }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./${{ steps.package.outputs.name }}
-          asset_name: ${{ steps.package.outputs.name }}
-          asset_content_type: application/gzip
