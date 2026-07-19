@@ -34,6 +34,27 @@ Usages:
 cprint [red|oke|magenta|green|nok|workspace|blue|cyan|white|yellow|debug|black|profile|platform|warn|ok] message
 ```
 
+### gbanner
+
+Print text inside a box, optionally colored.
+
+Usages:
+```
+gbanner [-c|--color name] [-x|--hpad n] [-y|--vpad n] [-l|--left] [text...]
+echo "some text" | gbanner --color=rainbow
+gbanner --hpad=4 --vpad=1 "Padded banner"
+gbanner --left "Left-aligned text"
+```
+
+Available colors: black, red, green, yellow, blue, magenta, cyan, white,
+their `hi<color>` bright variants, and `rainbow` which alternates the
+color of every character.
+
+`--hpad`/`-x` controls the padding (columns) kept between the terminal
+width and the box; `--vpad`/`-y` controls the padding (blank lines) kept
+between the box border and the text; `--left`/`-l` left-aligns the text
+instead of centering it.
+
 ### logging
 
 WIP
