@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -60,7 +59,7 @@ func PrintCenterTextLines(instr string) {
 func main() {
 
 	r := openStdinOrFile()
-	b, err := ioutil.ReadAll(r)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		log.Fatal(err)
 	}
