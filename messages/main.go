@@ -7,20 +7,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Content missing godoc.
+// Content holds the embedded long-description text for each print_status subcommand.
 //
-//go:embed usage/* long/*
+//go:embed long/*
 var Content embed.FS
-
-func GetUsage(name string) string {
-	filename := fmt.Sprintf("usage/%s", name)
-	msgstr, err := Content.ReadFile(filename)
-	if err != nil {
-		log.Error(err)
-		msgstr = []byte("undefined")
-	}
-	return string(msgstr)
-}
 
 func GetLong(name string) string {
 	filename := fmt.Sprintf("long/%s", name)

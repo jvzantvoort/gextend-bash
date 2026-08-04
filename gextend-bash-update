@@ -52,7 +52,7 @@ if [[ "$(id -u)" == "0" ]]
 then
   BINDIR="/usr/local/bin"
 else
-  BINDIR="$(go env GOBIN)"
+  BINDIR="$(go env GOBIN 2>/dev/null)"
 fi
 
 [[ -z "${BINDIR}" ]] && BINDIR="${HOME}/bin"

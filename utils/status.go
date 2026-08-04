@@ -14,7 +14,12 @@ import (
 func stripString(format string, args ...interface{}) string {
 
 	msg := format
-	width := getWidth() - WIDTHSUBS
+	width := getWidth()
+
+	if width > MAXWITH {
+		width = MAXWITH
+	}
+	width -= WIDTHSUBS
 
 	if len(args) > 0 {
 		msg = fmt.Sprintf(format, args...)
@@ -27,21 +32,50 @@ func stripString(format string, args ...interface{}) string {
 	return strings.Join([]string{msg, strings.Repeat(".", width-len(msg))}, "")
 }
 
-// PrintStatus prints a formatted status message with a colored status label.
-func PrintStatus(colorattr color.Attribute, status, format string, args ...interface{}) {
+// NormalizeStatus maps common status aliases (e.g. "OK", "WARN") to their
+// canonical form (e.g. "SUCCESS", "WARNING"). Unrecognized values are
+// returned upper-cased and otherwise unchanged.
+func NormalizeStatus(status string) string {
+
+	ustatus := strings.ToUpper(status)
+	retv := ustatus
+
+	switch ustatus {
+	case "OK", "OKE":
+		retv = "SUCCESS"
+	case "NOK", "FAIL", "FAILED":
+		retv = "FAILURE"
+	case "INFO":
+		retv = "NOTICE"
+	case "WARN":
+		retv = "WARNING"
+	case "UNDEFINED":
+		retv = "UNKNOWN"
+	}
+	return retv
+}
+
+// MakeStatus formats a status message with a status label colored according
+// to the normalized status (see NormalizeStatus). The label itself is
+// printed as given, not normalized.
+func MakeStatus(status, format string, args ...interface{}) string {
 
 	msg := stripString(format, args...)
-	state_color := color.New(colorattr)
+	state_color := color.New(NoticeColor)
+	ustatus := NormalizeStatus(status)
 
-	fmt.Printf("%s [ %s ]\n", msg, state_color.Sprint(status))
-}
+	switch ustatus {
+	case "SUCCESS":
+		state_color = color.New(SuccessColor)
+	case "FAILURE":
+		state_color = color.New(FailureColor)
+	case "NOTICE":
+		state_color = color.New(NoticeColor)
+	case "WARNING":
+		state_color = color.New(WarningColor)
+	case "UNKNOWN":
+		state_color = color.New(UnknownColor)
+	}
 
-// PrintSuccess prints a success status message in green.
-func PrintSuccess(format string, args ...interface{}) {
-	PrintStatus(SuccessColor, "SUCCESS", format, args...)
-}
-
-// PrintFailed prints a failed status message in red.
-func PrintFailed(format string, args ...interface{}) {
-	PrintStatus(FailureColor, "FAILED", format, args...)
+	return fmt.Sprintf("%s [ %-7s ]", msg, state_color.Sprint(status))
 }

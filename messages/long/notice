@@ -1,0 +1,6 @@
+Print a message with a white "NOTICE" status label.
+
+Alias: info
+
+Example:
+  print_status notice "starting deployment"

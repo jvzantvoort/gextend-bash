@@ -1,0 +1,9 @@
+print_status prints a formatted status line to stderr: a message followed by a
+colored, right-aligned status label, e.g.:
+
+  deployment finished..........................................[ SUCCESS ]
+
+Each status has its own subcommand (success, failure, notice, warning,
+unknown) plus common aliases (ok/oke, fail/nok, info, warn, undefined).
+Everything after the subcommand name is joined with spaces and used as
+the message.

@@ -1,0 +1,6 @@
+Print a message with a green "SUCCESS" status label.
+
+Aliases: ok, oke
+
+Example:
+  print_status success "deployment finished"

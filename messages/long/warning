@@ -1,0 +1,6 @@
+Print a message with a yellow "WARNING" status label.
+
+Alias: warn
+
+Example:
+  print_status warning "disk usage above 80%"

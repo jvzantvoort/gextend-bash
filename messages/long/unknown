@@ -1,0 +1,7 @@
+Print a message with a yellow "UNKNOWN" status label, for statuses that
+don't map to any of the known categories.
+
+Alias: undefined
+
+Example:
+  print_status unknown "unexpected state"

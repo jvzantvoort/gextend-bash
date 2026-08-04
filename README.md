@@ -25,13 +25,13 @@ tmux-project-update
 ## Contents
 
 
-### cprint
+### pprint
 
 Print a colored status.
 
 Usages:
 ```
-cprint [red|oke|magenta|green|nok|workspace|blue|cyan|white|yellow|debug|black|profile|platform|warn|ok] message
+pprint [red|oke|magenta|green|nok|workspace|blue|cyan|white|yellow|debug|black|profile|platform|warn|ok] message
 ```
 
 ### gbanner
@@ -54,10 +54,6 @@ color of every character.
 width and the box; `--vpad`/`-y` controls the padding (blank lines) kept
 between the box border and the text; `--left`/`-l` left-aligns the text
 instead of centering it.
-
-### logging
-
-WIP
 
 ### mvx
 
@@ -115,13 +111,27 @@ total 8
 -rw-r--r--. 1 jvzantvoort jvzantvoort 13 Aug 10 21:04 tempfile.1
 ```
 
+### print_status
+
+Print a formatted status line to stderr, with a colored, aligned status
+label. Aliases are normalized to their canonical name (`ok`/`oke` →
+`SUCCESS`, `nok`/`fail`/`failed` → `FAILURE`, `info` → `NOTICE`, `warn` →
+`WARNING`, `undefined` → `UNKNOWN`).
+
+Usages:
+```
+print_status [success|failure|warning|notice|ok|oke|fail|nok|info|warn|undefined] message...
+```
+
+Example:
+```
+# print_status success "deployment finished"
+deployment finished..........................................................[ SUCCESS ]
+```
+
 ### path_clean
 
 Returns a cleaned up version of the path
-
-### print_status
-
-Alias for cprint
 
 ### today
 
