@@ -68,24 +68,6 @@ func TestDirectoryExists(t *testing.T) {
 	}
 }
 
-func TestTargetExistsAndIsNotADirectory(t *testing.T) {
-	dir := t.TempDir()
-	file := filepath.Join(dir, "f.txt")
-	if err := os.WriteFile(file, []byte("x"), 0644); err != nil {
-		t.Fatalf("os.WriteFile() error = %v", err)
-	}
-
-	if !TargetExistsAndIsNotADirectory(file) {
-		t.Error("expected true for an existing regular file")
-	}
-	if TargetExistsAndIsNotADirectory(dir) {
-		t.Error("expected false for a directory")
-	}
-	if TargetExistsAndIsNotADirectory(filepath.Join(dir, "missing")) {
-		t.Error("expected false for a missing path")
-	}
-}
-
 func TestGetNextTarget(t *testing.T) {
 	t.Run("returns the base name when free", func(t *testing.T) {
 		dir := t.TempDir()

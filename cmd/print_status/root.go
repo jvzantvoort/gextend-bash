@@ -15,8 +15,8 @@ var verbose bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "logging",
-	Short: "Interface for logging",
+	Use:   "print_status",
+	Short: "Interface for print_status",
 	Long:  messages.GetLong("root"),
 }
 
@@ -30,7 +30,7 @@ func Execute() {
 }
 
 func init() {
-	// Setup logging
+	// Setup print_status
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp:          true,
 		DisableLevelTruncation: true,

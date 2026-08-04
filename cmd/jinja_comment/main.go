@@ -11,11 +11,10 @@ import (
 )
 
 const (
-	INDENT_NO = 8
+	INDENT_NO     = 8
 	CONSOLE_WIDTH = 80
-	B_MARK = "{#-"
-	E_MARK = "-#}"
-
+	B_MARK        = "{#-"
+	E_MARK        = "-#}"
 )
 
 func openStdinOrFile() io.Reader {

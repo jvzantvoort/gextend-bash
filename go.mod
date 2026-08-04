@@ -9,7 +9,6 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
-	gopkg.in/ini.v1 v1.67.3
 )
 
 require (
@@ -19,5 +18,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.2 // indirect
 	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 )

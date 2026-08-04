@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jvzantvoort/gextend-bash/colors"
+	tls "github.com/jvzantvoort/gextend-bash/printing"
 )
 
 func help(a ...string) {
@@ -14,7 +14,7 @@ func help(a ...string) {
 }
 
 func main() {
-	cr := colors.NewCprint()
+	cr := tls.NewCprint()
 	args := os.Args[1:]
 
 	if len(args) < 2 {

@@ -72,16 +72,6 @@ func LogDebugf(format string, a ...any) {
 	log.Debugf(retv, a...)
 }
 
-func LogInfof(format string, a ...any) {
-	retv := IndentStr(indent) + format
-	log.Infof(retv, a...)
-}
-
-func LogFatalf(format string, a ...any) {
-	retv := IndentStr(indent) + format
-	log.Fatalf(retv, a...)
-}
-
 func LogErrorf(format string, a ...any) {
 	retv := IndentStr(indent) + format
 	log.Errorf(retv, a...)

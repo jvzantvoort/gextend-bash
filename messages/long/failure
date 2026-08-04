@@ -1,0 +1,6 @@
+Print a message with a red "FAILURE" status label.
+
+Aliases: fail, nok
+
+Example:
+  print_status failure "deployment failed"

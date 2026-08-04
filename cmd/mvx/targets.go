@@ -64,19 +64,6 @@ func DirectoryExists(target string) bool {
 	return false
 }
 
-// We need the inverse ...
-func TargetExistsAndIsNotADirectory(target string) bool {
-
-	info, err := os.Stat(target)
-	if os.IsNotExist(err) {
-		return false
-	}
-	if info.IsDir() {
-		return false
-	}
-	return true
-}
-
 // Make sure the directory exists or exit with an error
 func ensureDir(dirname string) error {
 	StartFunc(CurFunc())
