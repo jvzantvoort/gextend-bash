@@ -11,7 +11,7 @@ Go based extra tools for shell scripting.
 Either download the release and unpack it some place. Or:
 
 ```sh
-curl -Ls https://raw.githubusercontent.com/jvzantvoort/tmux-project/main/tmux-project-update | bash
+curl -Ls https://raw.githubusercontent.com/jvzantvoort/gextend-bash/main/gextend-bash-update | bash
 ```
 
 ## Update
@@ -19,7 +19,7 @@ curl -Ls https://raw.githubusercontent.com/jvzantvoort/tmux-project/main/tmux-pr
 Updating can be done with:
 
 ```sh
-tmux-project-update
+gextend-bash-update
 ```
 
 ## Contents
@@ -140,3 +140,13 @@ Returns "vYYWW.<dow>" as a timestamp
 ### mdtoc
 
 Generate the toc for a markdown file
+
+### test_result
+
+Wrapper to print success of a command
+
+```sh
+command
+test_result "$?" "command has excuted successfully"
+
+```
