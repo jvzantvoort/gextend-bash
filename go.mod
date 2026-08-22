@@ -7,7 +7,7 @@ require (
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/goombaio/namegenerator v0.0.0-20181006234301-989e774b106e
 	github.com/mitchellh/go-wordwrap v1.0.1
-	github.com/sirupsen/logrus v1.9.4
+	github.com/sirupsen/logrus v1.10.0
 	github.com/spf13/cobra v1.10.2
 )
 
