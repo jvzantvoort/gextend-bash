@@ -1,19 +1,36 @@
 name: Release
 
+# Builds the archives for a release and attaches them to it. Runs when a
+# release is published by hand, and is called by the "Tag and release"
+# workflow for automatic releases (events from GITHUB_TOKEN do not trigger
+# other workflows, so it has to be called explicitly).
+
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to build and attach the archives to
+        required: true
+        type: string
+      ref:
+        description: Commit to build (the tag does not exist yet for a draft release)
+        required: true
+        type: string
+
 permissions:
   contents: write
-  packages: write
 
 jobs:
   release:
     permissions:
-      contents: write  # to upload release asset (actions/upload-release-asset)
+      contents: write  # to upload release assets
 
     name: Release gextend-bash
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
     strategy:
       matrix:
         goos: [linux, darwin]
@@ -28,6 +45,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.ref || github.event.release.tag_name }}
           fetch-depth: 0
 
       - name: Set up Go
@@ -50,32 +68,30 @@ jobs:
           GOARM: "7"
           CGO_ENABLED: "0"
         run: |
-          LDFLAGS="-s -w -X github.com/jvzantvoort/gextend-bash/version.Version=${GITHUB_REF_NAME}"
+          LDFLAGS="-s -w -X github.com/jvzantvoort/gextend-bash/version.Version=${TAG}"
+          OUTDIR="${GITHUB_WORKSPACE}/build/${{ matrix.goos }}.${{ matrix.goarch }}"
           find cmd -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | \
             while read -r target; do \
-             go build -trimpath -ldflags "${LDFLAGS}" -o $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }}/ ./cmd/${target}; \
+             go build -trimpath -ldflags "${LDFLAGS}" -o "${OUTDIR}/" "./cmd/${target}"; \
             done
-          cp gextend-bash-update $GITHUB_WORKSPACE/build/${{ matrix.goos }}.${{ matrix.goarch }}/gextend-bash-update
+          cp gextend-bash-update "${OUTDIR}/gextend-bash-update"
 
       - name: Create package
         id: package
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          PACKAGE_NAME=gextend-bash.${VERSION}.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz
-          tar -czvf $PACKAGE_NAME -C build/${{ matrix.goos }}.${{ matrix.goarch }} .
-          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          PACKAGE_NAME="gextend-bash.${TAG}.${{ matrix.goos }}.${{ matrix.goarch }}.tar.gz"
+          tar -czvf "${PACKAGE_NAME}" -C "build/${{ matrix.goos }}.${{ matrix.goarch }}" .
+          echo "name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Generate checksum
         run: |
-          sha256sum ${{ steps.package.outputs.name }} > ${{ steps.package.outputs.name }}.sha256
+          sha256sum "${{ steps.package.outputs.name }}" > "${{ steps.package.outputs.name }}.sha256"
 
+      # gh finds draft releases by tag too, unlike the release-by-tag API
       - name: Upload release assets
-        uses: softprops/action-gh-release@v3
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            ${{ steps.package.outputs.name }}
-            ${{ steps.package.outputs.name }}.sha256
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${TAG}" --repo "${GITHUB_REPOSITORY}" --clobber \
+            "${{ steps.package.outputs.name }}" \
+            "${{ steps.package.outputs.name }}.sha256"

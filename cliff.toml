@@ -92,3 +92,10 @@ topo_order_commits = true
 sort_commits = "oldest"
 # Process submodules commits
 recurse_submodules = false
+
+[bump]
+# feat: commits bump the minor version, everything else the patch version
+features_always_bump_minor = true
+# while on 0.x a breaking change bumps the minor version; moving to 1.0.0
+# is left as a deliberate, manual release
+breaking_always_bump_major = false

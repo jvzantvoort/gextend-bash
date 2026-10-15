@@ -1,0 +1,96 @@
+name: Tag and release
+
+# On every merge to main that changes the shipped code, bump the version
+# from the conventional commits since the last tag (feat: minor, other
+# types: patch), and publish a release with binaries for every platform.
+#
+# The release is created as a draft and only published once all archives
+# are attached, so "latest" never points at a release without downloads.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'cmd/**'
+      - 'messages/**'
+      - 'gextend-bash-update'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tag-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Determine version and draft release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Determine the next version
+        id: next
+        run: |
+          current="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          next="$(git cliff --bumped-version)"
+          if [ -z "${next}" ] || [ "${next}" = "${current}" ] || git rev-parse -q --verify "refs/tags/${next}" >/dev/null; then
+            echo "Nothing to release (latest tag: ${current:-none})"
+            exit 0
+          fi
+          echo "Releasing ${next} (previous: ${current:-none})"
+          echo "tag=${next}" >> "$GITHUB_OUTPUT"
+
+      - name: Create draft release
+        if: steps.next.outputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.next.outputs.tag }}
+        run: |
+          # remove a draft left behind by an earlier failed run
+          if [ "$(gh release view "${TAG}" --json isDraft --jq .isDraft 2>/dev/null)" = "true" ]; then
+            gh release delete "${TAG}" --yes
+          fi
+          git cliff --unreleased --tag "${TAG}" --strip all > notes.md
+          gh release create "${TAG}" --draft --target "${GITHUB_SHA}" \
+            --title "${TAG}" --notes-file notes.md
+
+  build:
+    name: Build release assets
+    needs: tag
+    if: needs.tag.outputs.tag != ''
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      tag: ${{ needs.tag.outputs.tag }}
+      ref: ${{ github.sha }}
+
+  publish:
+    name: Publish release
+    needs: [tag, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the draft (creates the tag)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.tag.outputs.tag }}
+        run: gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --draft=false
