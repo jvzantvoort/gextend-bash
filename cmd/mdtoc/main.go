@@ -30,7 +30,7 @@ func parseMarkdown(filename string, maxDepth int) ([]Heading, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	var headings []Heading
 	scanner := bufio.NewScanner(file)
@@ -61,7 +61,7 @@ func generateTOC(headings []Heading) string {
 	var sb strings.Builder
 	for _, h := range headings {
 		indent := strings.Repeat("  ", h.Level-1) // Indent based on level
-		sb.WriteString(fmt.Sprintf("%s- [%s](#%s)\n", indent, h.Text, h.Anchor))
+		fmt.Fprintf(&sb, "%s- [%s](#%s)\n", indent, h.Text, h.Anchor)
 	}
 	return sb.String()
 }

@@ -60,7 +60,9 @@ func TestPrintCenterTextLines(t *testing.T) {
 	}
 	os.Stdout = w
 	PrintCenterTextLines("hello world")
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatalf("w.Close() error = %v", err)
+	}
 	os.Stdout = orig
 
 	var buf bytes.Buffer
