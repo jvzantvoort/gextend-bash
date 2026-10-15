@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
+
+	"github.com/jvzantvoort/gextend-bash/version"
 )
 
 // formatWeek renders t as wk<yy><ww>.<d>: the two-digit ISO year, the ISO
@@ -15,6 +18,8 @@ func formatWeek(t time.Time) string {
 }
 
 func main() {
+	version.HandleArgs(os.Args)
+
 	fmt.Println(formatWeek(time.Now()))
 }
 

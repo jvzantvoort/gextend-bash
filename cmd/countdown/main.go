@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/jvzantvoort/gextend-bash/version"
 )
 
 func sec2Human(insec int) string {
@@ -73,20 +75,30 @@ func barColor(percent int) ui.Color {
 	}
 }
 
-func main() {
-	args := os.Args[1:]
-	if len(args) == 0 {
-		os.Exit(0)
+// parseDuration accepts a number of seconds ("90") or a Go duration
+// ("90s", "5m", "1h30m") and returns whole seconds, at least 1.
+func parseDuration(arg string) (int, error) {
+	if seconds, err := strconv.Atoi(arg); err == nil {
+		if seconds < 1 {
+			return 0, fmt.Errorf("duration %q must be at least one second", arg)
+		}
+		return seconds, nil
 	}
-
-	seconds, err := strconv.Atoi(args[0])
-	if err != nil || seconds < 1 {
-		fmt.Fprintf(os.Stderr, "argument %s is not a positive number of seconds\n", args[0])
-		os.Exit(1)
+	d, err := time.ParseDuration(arg)
+	if err != nil {
+		return 0, fmt.Errorf("duration %q is not a number of seconds or a duration like 5m or 1h30m", arg)
 	}
+	if d < time.Second {
+		return 0, fmt.Errorf("duration %q must be at least one second", arg)
+	}
+	return int(d.Round(time.Second) / time.Second), nil
+}
 
+// run shows the countdown and reports whether it ran to completion (false
+// when the user quit early).
+func run(seconds int) (bool, error) {
 	if err := ui.Init(); err != nil {
-		log.Fatalf("failed to initialize termui: %v", err)
+		return false, fmt.Errorf("failed to initialize termui: %w", err)
 	}
 	defer ui.Close()
 
@@ -120,16 +132,51 @@ func main() {
 	for {
 		percent, _ := getTimes(start_secs, seconds)
 		if percent < 1 {
-			return
+			return true, nil
 		}
 		select {
 		case e := <-uiEvents:
 			switch e.ID {
 			case "q", "<C-c>":
-				return
+				return false, nil
 			}
 		case <-ticker:
 			draw()
 		}
+	}
+}
+
+func main() {
+	var noBell, showVersion bool
+	flag.BoolVar(&noBell, "no-bell", false, "do not ring the terminal bell when the countdown ends")
+	flag.BoolVar(&showVersion, "version", false, "print the version and exit")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [--no-bell] <seconds|duration>\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Durations use Go syntax, e.g. 90, 90s, 5m, 1h30m. Press q to quit.\n\n")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	if showVersion {
+		version.Print(os.Stdout, "countdown")
+		return
+	}
+	if flag.NArg() != 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	seconds, err := parseDuration(flag.Arg(0))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	finished, err := run(seconds)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if finished && !noBell {
+		fmt.Print("\a")
 	}
 }

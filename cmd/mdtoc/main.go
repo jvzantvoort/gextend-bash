@@ -7,6 +7,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/jvzantvoort/gextend-bash/version"
 )
 
 // Heading represents a markdown heading
@@ -105,11 +107,60 @@ func generateTOC(headings []Heading) string {
 	return sb.String()
 }
 
+const (
+	tocStart = "<!-- toc -->"
+	tocStop  = "<!-- tocstop -->"
+)
+
+// replaceTOC returns content with the text between the tocStart and tocStop
+// marker lines replaced by toc.
+func replaceTOC(content, toc string) (string, error) {
+	start := strings.Index(content, tocStart)
+	if start < 0 {
+		return "", fmt.Errorf("marker %s not found", tocStart)
+	}
+	bodyStart := start + len(tocStart)
+	stop := strings.Index(content[bodyStart:], tocStop)
+	if stop < 0 {
+		return "", fmt.Errorf("marker %s not found after %s", tocStop, tocStart)
+	}
+	stop += bodyStart
+
+	return content[:bodyStart] + "\n\n" + strings.TrimRight(toc, "\n") + "\n\n" + content[stop:], nil
+}
+
+// writeTOC replaces the TOC between the markers in filename.
+func writeTOC(filename, toc string) error {
+	info, err := os.Stat(filename)
+	if err != nil {
+		return err
+	}
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	updated, err := replaceTOC(string(data), toc)
+	if err != nil {
+		return fmt.Errorf("%s: %w", filename, err)
+	}
+	if updated == string(data) {
+		return nil
+	}
+	return os.WriteFile(filename, []byte(updated), info.Mode().Perm())
+}
+
 func main() {
 	// Define command-line flags
 	filename := flag.String("file", "README.md", "Markdown file to generate TOC for")
 	maxDepth := flag.Int("depth", 3, "Maximum heading depth to include in TOC")
+	inPlace := flag.Bool("w", false, "write the TOC into the file between "+tocStart+" and "+tocStop+" instead of printing it")
+	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		version.Print(os.Stdout, "mdtoc")
+		return
+	}
 
 	// Parse markdown file
 	headings, err := parseMarkdown(*filename, *maxDepth)
@@ -120,5 +171,12 @@ func main() {
 
 	// Generate and print TOC
 	toc := generateTOC(headings)
+	if *inPlace {
+		if err := writeTOC(*filename, toc); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating markdown file: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
 	fmt.Println(toc)
 }

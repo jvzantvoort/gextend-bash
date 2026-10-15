@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jvzantvoort/gextend-bash/version"
 )
 
 func AppendIfMissing(slice []string, i string) []string {
@@ -16,13 +18,16 @@ func AppendIfMissing(slice []string, i string) []string {
 	return append(slice, i)
 }
 
+// FilterExists returns the existing directories in slice, cleaned and
+// without duplicates. Empty and relative entries (which resolve against
+// whatever the current directory happens to be) are dropped.
 func FilterExists(slice []string) []string {
 	var retv []string
 	for _, dirn := range slice {
-		if len(dirn) == 0 {
+		if !filepath.IsAbs(dirn) {
 			continue
 		}
-		dirn, _ = filepath.Abs(dirn)
+		dirn = filepath.Clean(dirn)
 		info, err := os.Stat(dirn)
 		if err != nil {
 			continue
@@ -35,6 +40,8 @@ func FilterExists(slice []string) []string {
 }
 
 func main() {
+	version.HandleArgs(os.Args)
+
 	path := strings.Join(os.Args[1:], " ")
 
 	// Default to the environment variable

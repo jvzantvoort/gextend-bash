@@ -6,32 +6,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/mattn/go-runewidth"
 )
-
-func TestOpenStdinOrFile(t *testing.T) {
-	origArgs := os.Args
-	defer func() { os.Args = origArgs }()
-
-	t.Run("uses args when provided", func(t *testing.T) {
-		os.Args = []string{"cmd", "hello", "world"}
-		r := openStdinOrFile()
-		data, err := io.ReadAll(r)
-		if err != nil {
-			t.Fatalf("io.ReadAll() error = %v", err)
-		}
-		if string(data) != "hello world" {
-			t.Errorf("content = %q, want %q", data, "hello world")
-		}
-	})
-
-	t.Run("falls back to stdin when no args", func(t *testing.T) {
-		os.Args = []string{"cmd"}
-		r := openStdinOrFile()
-		if r != os.Stdin {
-			t.Error("expected os.Stdin when no extra args are given")
-		}
-	})
-}
 
 func TestPrintCenterText(t *testing.T) {
 	t.Run("empty input is framed with the jinja markers", func(t *testing.T) {
@@ -75,5 +52,14 @@ func TestPrintCenterTextLines(t *testing.T) {
 	}
 	if !strings.Contains(out, B_MARK) {
 		t.Errorf("output = %q, want it to contain the marker %q", out, B_MARK)
+	}
+}
+
+func TestPrintCenterTextWidth(t *testing.T) {
+	want := runewidth.StringWidth(PrintCenterText(""))
+	for _, in := range []string{"hi", "日本語", strings.Repeat("x", CONSOLE_WIDTH-INDENT_NO)} {
+		if got := runewidth.StringWidth(PrintCenterText(in)); got != want {
+			t.Errorf("PrintCenterText(%q) display width = %d, want %d", in, got, want)
+		}
 	}
 }

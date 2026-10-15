@@ -1,5 +1,11 @@
 achelper or auto complete helper provides bash auto complete content for know options.
 
+Usage:
+
+  eval "$(achelper ssh [--known-hosts])"
+
 Currently supported:
 
-- ssh
+- ssh: host name completion for ssh, sftp, scp and rsync from /etc/hosts
+  and ~/.ssh/config (following Include lines); --known-hosts also adds the
+  unhashed entries of ~/.ssh/known_hosts

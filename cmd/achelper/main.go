@@ -5,6 +5,8 @@ import (
 	"embed"
 	"fmt"
 	"os"
+
+	"github.com/jvzantvoort/gextend-bash/version"
 )
 
 //go:embed message/*
@@ -25,8 +27,19 @@ func main() {
 		AbortMe()
 	}
 
+	version.HandleArgs(os.Args)
+
 	if os.Args[1] == "ssh" {
-		err := SecureShellHelper()
+		knownHosts := false
+		for _, arg := range os.Args[2:] {
+			switch arg {
+			case "--known-hosts", "-known-hosts":
+				knownHosts = true
+			default:
+				AbortMe()
+			}
+		}
+		err := SecureShellHelper(knownHosts)
 		if err != nil {
 			fmt.Println(err)
 		}
