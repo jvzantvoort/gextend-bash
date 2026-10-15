@@ -28,7 +28,7 @@ jobs:
     - name: Build all binaries
       run: |
         find cmd -maxdepth 1 -mindepth 1 -type d -printf "%f\n" | while read -r package; do
-          CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o build/$package ./cmd/$package
+          CGO_ENABLED=0 GOOS="linux" GOARCH="amd64" go build -v -o "build/${package}" "./cmd/${package}"
         done
 
     - name: Run go vet

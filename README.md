@@ -11,6 +11,7 @@ Go based extra tools for shell scripting.
 - [gextend-bash](#gextend-bash)
   - [Installation](#installation)
   - [Update](#update)
+  - [Releases](#releases)
   - [Contents](#contents)
 
 <!-- tocstop -->
@@ -41,6 +42,17 @@ gextend-bash-update
 ```
 
 Every tool reports its version with `--version`.
+
+## Releases
+
+Merging a pull request that changes the code (Go sources, `go.mod`/`go.sum`
+or `gextend-bash-update`) releases a new version automatically. The version
+is derived from the [conventional commit](https://www.conventionalcommits.org)
+messages since the last tag: `feat:` bumps the minor version, other types
+the patch version. Release notes are generated with
+[git-cliff](https://git-cliff.org). Merges that only touch documentation or
+workflows do not create a release; run the "Tag and release" workflow by
+hand to release them anyway.
 
 ## Contents
 
