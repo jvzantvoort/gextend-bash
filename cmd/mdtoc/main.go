@@ -112,21 +112,40 @@ const (
 	tocStop  = "<!-- tocstop -->"
 )
 
-// replaceTOC returns content with the text between the tocStart and tocStop
-// marker lines replaced by toc.
-func replaceTOC(content, toc string) (string, error) {
-	start := strings.Index(content, tocStart)
-	if start < 0 {
-		return "", fmt.Errorf("marker %s not found", tocStart)
+// findMarkerLine returns the offset of the first line at or after from
+// that consists of marker alone (surrounding whitespace allowed), or -1.
+// Markers mentioned inside other text do not count.
+func findMarkerLine(content, marker string, from int) int {
+	for offset := from; offset < len(content); {
+		end := strings.IndexByte(content[offset:], '\n')
+		if end < 0 {
+			end = len(content) - offset
+		}
+		if strings.TrimSpace(content[offset:offset+end]) == marker {
+			return offset
+		}
+		offset += end + 1
 	}
-	bodyStart := start + len(tocStart)
-	stop := strings.Index(content[bodyStart:], tocStop)
+	return -1
+}
+
+// replaceTOC returns content with the lines between the tocStart and
+// tocStop marker lines replaced by toc.
+func replaceTOC(content, toc string) (string, error) {
+	start := findMarkerLine(content, tocStart, 0)
+	if start < 0 {
+		return "", fmt.Errorf("no line with marker %s found", tocStart)
+	}
+	bodyStart := start + strings.IndexByte(content[start:], '\n') + 1
+	if bodyStart <= start {
+		return "", fmt.Errorf("marker %s not found after %s", tocStop, tocStart)
+	}
+	stop := findMarkerLine(content, tocStop, bodyStart)
 	if stop < 0 {
 		return "", fmt.Errorf("marker %s not found after %s", tocStop, tocStart)
 	}
-	stop += bodyStart
 
-	return content[:bodyStart] + "\n\n" + strings.TrimRight(toc, "\n") + "\n\n" + content[stop:], nil
+	return content[:bodyStart] + "\n" + strings.TrimRight(toc, "\n") + "\n\n" + content[stop:], nil
 }
 
 // writeTOC replaces the TOC between the markers in filename.

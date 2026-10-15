@@ -158,8 +158,20 @@ func TestReplaceTOC(t *testing.T) {
 		}
 	})
 
+	t.Run("markers inside other text are ignored", func(t *testing.T) {
+		in := "Use `<!-- toc -->` and `<!-- tocstop -->`.\n<!-- toc -->\n<!-- tocstop -->\n"
+		got, err := replaceTOC(in, toc)
+		if err != nil {
+			t.Fatalf("replaceTOC() error = %v", err)
+		}
+		want := "Use `<!-- toc -->` and `<!-- tocstop -->`.\n<!-- toc -->\n\n- [A](#a)\n\n<!-- tocstop -->\n"
+		if got != want {
+			t.Errorf("replaceTOC() = %q, want %q", got, want)
+		}
+	})
+
 	t.Run("missing markers are an error", func(t *testing.T) {
-		for _, in := range []string{"no markers", "<!-- toc --> only start", "<!-- tocstop --> <!-- toc -->"} {
+		for _, in := range []string{"no markers", "<!-- toc -->\nonly start\n", "<!-- tocstop -->\n<!-- toc -->\n", "<!-- toc -->", "text <!-- toc -->\n<!-- tocstop -->\n"} {
 			if _, err := replaceTOC(in, toc); err == nil {
 				t.Errorf("replaceTOC(%q) expected an error", in)
 			}

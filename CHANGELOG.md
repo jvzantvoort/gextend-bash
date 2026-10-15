@@ -2,7 +2,45 @@
 
 ### 🚀 Features
 
+- Fix go vet issue
+- Version flag, shared helpers and tool improvements
+- Add run_status, retry, pathmunge and confirm
+
+### 🐛 Bug Fixes
+
+- Address code review findings
+- Harden the updater, fix build.sh and streamline workflows
+
+### 💼 Other
+
+- *(deps)* Bump github/codeql-action from 4.37.3 to 4.37.6
+
+### ⚙️ Miscellaneous Tasks
+
+- Update dependencies and tighten CI checks
+## [0.6.0] - 2026-08-04
+
+### 🚀 Features
+
+- Add test_result
+## [0.5.0] - 2026-08-04
+
+### 🚀 Features
+
+- Print strings update
+
+### 💼 Other
+
+- *(deps)* Bump actions/setup-go from 6 to 7
+- *(deps)* Bump github/codeql-action from 4 to 4.37.3
+## [0.4.0] - 2026-07-19
+
+### 🚀 Features
+
 - Cleanup the build and update code
+- Moved changelog to git-cliff
+- Add test code
+- Add countdown
 ## [0.3.0] - 2026-07-19
 
 ### 🚀 Features
