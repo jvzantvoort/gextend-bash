@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestFormatDestFile(t *testing.T) {
@@ -193,4 +195,135 @@ func TestMoveFile(t *testing.T) {
 			t.Errorf("expected source to be removed, stat err = %v", err)
 		}
 	})
+}
+
+func TestDeepCompare(t *testing.T) {
+	big := bytes.Repeat([]byte{0}, 3*compareChunkSize+17)
+	bigDiffLast := bytes.Clone(big)
+	bigDiffLast[len(bigDiffLast)-1] = 'X'
+
+	tests := []struct {
+		name string
+		src  []byte
+		dst  []byte
+		want bool
+	}{
+		{"identical text", []byte("a\nb\n"), []byte("a\nb\n"), true},
+		{"different text of equal size", []byte("a\nb\n"), []byte("a\nc\n"), false},
+		{"different sizes", []byte("abc"), []byte("abcd"), false},
+		{"empty files", nil, nil, true},
+		{"identical large binary", big, bytes.Clone(big), true},
+		// regression: a line-based scanner gave up on lines over 64KB and
+		// reported these as identical, after which mvx deleted the source
+		{"large binary differing in the last byte", bigDiffLast, big, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			src := filepath.Join(dir, "src")
+			dst := filepath.Join(dir, "dst")
+			if err := os.WriteFile(src, tt.src, 0644); err != nil {
+				t.Fatalf("os.WriteFile() error = %v", err)
+			}
+			if err := os.WriteFile(dst, tt.dst, 0644); err != nil {
+				t.Fatalf("os.WriteFile() error = %v", err)
+			}
+			if got := deepCompare(src, dst); got != tt.want {
+				t.Errorf("deepCompare() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+	t.Run("unreadable file is never reported identical", func(t *testing.T) {
+		dir := t.TempDir()
+		src := filepath.Join(dir, "src")
+		if err := os.WriteFile(src, []byte("x"), 0644); err != nil {
+			t.Fatalf("os.WriteFile() error = %v", err)
+		}
+		if deepCompare(src, filepath.Join(dir, "missing")) {
+			t.Error("deepCompare() = true for a missing destination")
+		}
+	})
+}
+
+func TestMoveFileKeepsDifferentSameSizeFile(t *testing.T) {
+	dir := t.TempDir()
+	content := bytes.Repeat([]byte{0}, 100000)
+	src := filepath.Join(dir, "f.bin")
+	srcContent := bytes.Clone(content)
+	srcContent[len(srcContent)-1] = 'X'
+	if err := os.WriteFile(src, srcContent, 0644); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+	dst := filepath.Join(dir, "out")
+	if err := os.MkdirAll(dst, 0755); err != nil {
+		t.Fatalf("os.MkdirAll() error = %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dst, "f.bin"), content, 0644); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+
+	if err := MoveFile(src, dst); err != nil {
+		t.Fatalf("MoveFile() error = %v", err)
+	}
+
+	got, err := os.ReadFile(filepath.Join(dst, "f.1.bin"))
+	if err != nil {
+		t.Fatalf("expected the source to be moved to f.1.bin: %v", err)
+	}
+	if !bytes.Equal(got, srcContent) {
+		t.Error("moved file content differs from the original source")
+	}
+}
+
+func TestDirectoryExistsUnreadableParent(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("permissions are not enforced for root")
+	}
+	dir := t.TempDir()
+	locked := filepath.Join(dir, "locked")
+	if err := os.MkdirAll(filepath.Join(locked, "sub"), 0755); err != nil {
+		t.Fatalf("os.MkdirAll() error = %v", err)
+	}
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatalf("os.Chmod() error = %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(locked, 0755) })
+
+	if DirectoryExists(filepath.Join(locked, "sub")) {
+		t.Error("expected DirectoryExists() to be false when the path cannot be stat'ed")
+	}
+}
+
+func TestCopyFile(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src.sh")
+	if err := os.WriteFile(src, []byte("#!/bin/sh\n"), 0750); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+	mtime := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
+	if err := os.Chtimes(src, mtime, mtime); err != nil {
+		t.Fatalf("os.Chtimes() error = %v", err)
+	}
+	dst := filepath.Join(dir, "dst.sh")
+
+	if err := copyFile(src, dst); err != nil {
+		t.Fatalf("copyFile() error = %v", err)
+	}
+
+	info, err := os.Stat(dst)
+	if err != nil {
+		t.Fatalf("os.Stat() error = %v", err)
+	}
+	if info.Mode().Perm() != 0750 {
+		t.Errorf("mode = %v, want %v", info.Mode().Perm(), os.FileMode(0750))
+	}
+	if !info.ModTime().Equal(mtime) {
+		t.Errorf("mtime = %v, want %v", info.ModTime(), mtime)
+	}
+
+	if err := copyFile(src, dst); err == nil {
+		t.Error("expected copyFile() to refuse to overwrite an existing file")
+	}
 }

@@ -11,12 +11,13 @@ func TestCenterText(t *testing.T) {
 		{"short word", "hi", 10},
 		{"exact width", "abcdef", 6},
 		{"empty string", "", 8},
+		{"longer than width is not padded", "abcdefghij", 4},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := CenterText(tt.instr, tt.width)
-			if len(got) != tt.width {
+			if len(got) != max(tt.width, len(tt.instr)) {
 				t.Errorf("CenterText(%q, %d) length = %d, want %d (got %q)", tt.instr, tt.width, len(got), tt.width, got)
 			}
 		})

@@ -53,3 +53,23 @@ func TestFilterExists(t *testing.T) {
 		}
 	}
 }
+
+func TestFilterExistsUnreadableParent(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("permissions are not enforced for root")
+	}
+	dir := t.TempDir()
+	locked := filepath.Join(dir, "locked")
+	if err := os.MkdirAll(filepath.Join(locked, "sub"), 0755); err != nil {
+		t.Fatalf("os.MkdirAll() error = %v", err)
+	}
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatalf("os.Chmod() error = %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(locked, 0755) })
+
+	got := FilterExists([]string{dir, filepath.Join(locked, "sub")})
+	if len(got) != 1 || got[0] != dir {
+		t.Errorf("FilterExists() = %v, want [%s]", got, dir)
+	}
+}

@@ -16,6 +16,9 @@ func TestGenerateAnchor(t *testing.T) {
 		{"strips special characters", "Foo & Bar!", "foo--bar"},
 		{"collapses to lowercase", "MixedCase Heading", "mixedcase-heading"},
 		{"keeps numbers", "Section 1.2", "section-12"},
+		{"keeps underscores", "Foo_bar", "foo_bar"},
+		{"keeps hyphens", "pre-commit hooks", "pre-commit-hooks"},
+		{"keeps non-ASCII letters", "Über Café", "über-café"},
 	}
 
 	for _, tt := range tests {
@@ -88,5 +91,49 @@ func TestGenerateTOC(t *testing.T) {
 	want := "- [Title](#title)\n  - [Sub](#sub)\n"
 	if got != want {
 		t.Errorf("generateTOC() = %q, want %q", got, want)
+	}
+}
+
+func TestParseMarkdownEdgeCases(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "doc.md")
+	content := "# Title\n" +
+		"\n" +
+		"```bash\n" +
+		"# not a heading\n" +
+		"```\n" +
+		"\n" +
+		"~~~~\n" +
+		"## also not a heading\n" +
+		"~~~\n" +
+		"## still inside the block\n" +
+		"~~~~\n" +
+		"\n" +
+		"## Usage\n" +
+		"## Usage\n" +
+		"### Closed heading ###\n"
+	if err := os.WriteFile(target, []byte(content), 0644); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+
+	headings, err := parseMarkdown(target, 3)
+	if err != nil {
+		t.Fatalf("parseMarkdown() error = %v", err)
+	}
+
+	want := []Heading{
+		{Level: 1, Text: "Title", Anchor: "title"},
+		{Level: 2, Text: "Usage", Anchor: "usage"},
+		{Level: 2, Text: "Usage", Anchor: "usage-1"},
+		{Level: 3, Text: "Closed heading", Anchor: "closed-heading"},
+	}
+
+	if len(headings) != len(want) {
+		t.Fatalf("parseMarkdown() returned %d headings, want %d: %+v", len(headings), len(want), headings)
+	}
+	for i := range want {
+		if headings[i] != want[i] {
+			t.Errorf("headings[%d] = %+v, want %+v", i, headings[i], want[i])
+		}
 	}
 }

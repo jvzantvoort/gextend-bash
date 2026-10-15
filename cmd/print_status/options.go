@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/jvzantvoort/gextend-bash/messages"
 	"github.com/spf13/cobra"
@@ -40,4 +41,5 @@ func init() {
 
 		Options = append(Options, keyn)
 	}
+	slices.Sort(Options)
 }

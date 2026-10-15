@@ -31,7 +31,7 @@ func (c *Cprint) InitColors() {
 	colors["yellow"] = color.FgYellow
 
 	// status
-	for _, x := range []string{"nok"} {
+	for _, x := range []string{"nok", "err", "error"} {
 		colors[x] = color.FgRed
 	}
 
@@ -61,7 +61,7 @@ func (c *Cprint) InitTokens() {
 		tokens[x] = WARNING_SIGN
 	}
 
-	for _, x := range []string{"warn", "err", "error"} {
+	for _, x := range []string{"warn"} {
 		tokens[x] = EXCLAMATION_MARK
 	}
 

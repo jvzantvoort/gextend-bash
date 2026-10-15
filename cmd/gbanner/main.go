@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-runewidth"
 	"github.com/mitchellh/go-wordwrap"
 )
 
@@ -89,10 +90,8 @@ func rainbow(line string) string {
 
 func buildLine(instr string, boxWidth int, left bool) string {
 	width := boxWidth - 4
-	if len(instr) > width {
-		instr = instr[:width]
-	}
-	restlen := width - len(instr)
+	instr = runewidth.Truncate(instr, width, "")
+	restlen := width - runewidth.StringWidth(instr)
 	leftpad, rightpad := restlen/2, restlen-restlen/2
 	if left {
 		leftpad, rightpad = 0, restlen

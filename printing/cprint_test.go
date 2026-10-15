@@ -80,6 +80,8 @@ func TestCprintSetToken(t *testing.T) {
 		{"ok", HEAVY_CHECK_MARK},
 		{"oke", HEAVY_CHECK_MARK},
 		{"nok", WARNING_SIGN},
+		{"err", WARNING_SIGN},
+		{"error", WARNING_SIGN},
 		{"warn", EXCLAMATION_MARK},
 		{"profile", BLACK_DIAMOND_SUIT},
 		{"unknown-token", BLACK_DIAMOND_SUIT},

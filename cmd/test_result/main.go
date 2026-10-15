@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -11,25 +12,30 @@ import (
 
 func Die(instr ...string) {
 	if len(instr) != 0 {
-		fmt.Printf("%s\n", instr)
+		fmt.Fprintln(os.Stderr, strings.Join(instr, " "))
 	}
-	fmt.Printf("USAGE:\n\n")
-	fmt.Printf("\t%s <exitcode> <message>\n\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "USAGE:\n\n")
+	fmt.Fprintf(os.Stderr, "\t%s <exitcode> <message>\n\n", os.Args[0])
 	os.Exit(1)
 }
 
-func main() {
-	args := os.Args[1:]
-
+// parseArgs splits the command line into the exit code and the message.
+func parseArgs(args []string) (int, string, error) {
 	if len(args) < 2 {
-		Die()
+		return 0, "", errors.New("not enough arguments")
 	}
 	exitcode, err := strconv.Atoi(args[0])
 	if err != nil {
-		Die(fmt.Sprintf("Error %s is not a number\n", args[0]))
+		return 0, "", fmt.Errorf("error: %s is not a number", args[0])
 	}
+	return exitcode, strings.Join(args[1:], " "), nil
+}
 
-	message := strings.Join(args[1:], " ")
+func main() {
+	exitcode, message, err := parseArgs(os.Args[1:])
+	if err != nil {
+		Die(err.Error())
+	}
 
 	if exitcode == 0 {
 		fmt.Print(utils.MakeStatus("SUCCESS", "%s", message))

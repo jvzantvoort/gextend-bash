@@ -86,6 +86,22 @@ func TestBuildLine(t *testing.T) {
 		}
 	})
 
+	t.Run("measures wide characters by display width", func(t *testing.T) {
+		got := buildLine("日本", 10, false)
+		want := Vertical + " " + " 日本 " + " " + Vertical
+		if got != want {
+			t.Errorf("buildLine() = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("never cuts a multi-byte character in half", func(t *testing.T) {
+		got := buildLine("ééééé", 8, true)
+		want := Vertical + " " + "éééé" + " " + Vertical
+		if got != want {
+			t.Errorf("buildLine() = %q, want %q", got, want)
+		}
+	})
+
 	t.Run("truncates text wider than the box", func(t *testing.T) {
 		got := buildLine("abcdefgh", 8, false)
 		// width = boxWidth-4 = 4, text truncated to "abcd"
