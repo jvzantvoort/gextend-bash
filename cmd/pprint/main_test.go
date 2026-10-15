@@ -19,3 +19,10 @@ func TestColorNames(t *testing.T) {
 		t.Errorf("colorNames() = %v, want it to contain %q", got, "ok")
 	}
 }
+
+func TestUsage(t *testing.T) {
+	got := usage("pprint", []string{"ok", "red"})
+	if got != "pprint [ok|red] message" {
+		t.Errorf("usage() = %q", got)
+	}
+}

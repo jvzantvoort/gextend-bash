@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/fatih/color"
+)
 
 func TestParseArgs(t *testing.T) {
 	tests := []struct {
@@ -27,5 +32,28 @@ func TestParseArgs(t *testing.T) {
 				t.Errorf("parseArgs(%q) = (%d, %q), want (%d, %q)", tt.args, code, msg, tt.wantCode, tt.wantMsg)
 			}
 		})
+	}
+}
+
+func TestRender(t *testing.T) {
+	color.NoColor = true
+
+	tests := []struct {
+		code  int
+		label string
+	}{
+		{0, "SUCCESS"},
+		{1, "FAILURE"},
+		{127, "FAILURE"},
+	}
+
+	for _, tt := range tests {
+		got := render(tt.code, "deploy")
+		if !strings.HasPrefix(got, "deploy.") {
+			t.Errorf("render(%d) = %q, want it to start with the dotted message", tt.code, got)
+		}
+		if !strings.HasSuffix(got, "[ "+tt.label+" ]") {
+			t.Errorf("render(%d) = %q, want label %s", tt.code, got, tt.label)
+		}
 	}
 }

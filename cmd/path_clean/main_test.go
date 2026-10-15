@@ -41,7 +41,8 @@ func TestFilterExists(t *testing.T) {
 	}
 	missingDir := filepath.Join(dir, "missing")
 
-	got := FilterExists([]string{"", existingDir, existingFile, missingDir, existingDir})
+	t.Chdir(dir)
+	got := FilterExists([]string{"", existingDir, existingFile, missingDir, existingDir + "/", "existing", ".", "./existing"})
 
 	want := []string{existingDir}
 	if len(got) != len(want) {

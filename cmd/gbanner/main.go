@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/jvzantvoort/gextend-bash/utils"
+	"github.com/jvzantvoort/gextend-bash/version"
 	"github.com/mattn/go-runewidth"
 	"github.com/mitchellh/go-wordwrap"
 )
@@ -52,13 +54,6 @@ var rainbowColors = []color.Attribute{
 	color.FgCyan,
 	color.FgBlue,
 	color.FgMagenta,
-}
-
-func openStdinOrFile(args []string) io.Reader {
-	if len(args) > 0 {
-		return strings.NewReader(strings.Join(args, " "))
-	}
-	return os.Stdin
 }
 
 // colorize applies the requested color to a single line of the banner.
@@ -144,7 +139,7 @@ func usage() {
 	names = append(names, Rainbow)
 	sort.Strings(names)
 
-	fmt.Fprintf(os.Stderr, "Usage: %s [-c|--color name] [-x|--hpad n] [-y|--vpad n] [-l|--left] [text...]\n\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "Usage: %s [-c|--color name] [-x|--hpad n] [-y|--vpad n] [-l|--left] [--version] [text...]\n\n", os.Args[0])
 	fmt.Fprintf(os.Stderr, "Reads text from the arguments, or from stdin when no arguments are given,\n")
 	fmt.Fprintf(os.Stderr, "and prints it inside a box.\n\n")
 	fmt.Fprintf(os.Stderr, "Available colors: %s\n\n", strings.Join(names, ", "))
@@ -156,7 +151,7 @@ func usage() {
 func main() {
 	var colorName string
 	var hpad, vpad int
-	var left bool
+	var left, showVersion bool
 	flag.StringVar(&colorName, "color", "", "border/text color, or 'rainbow'")
 	flag.StringVar(&colorName, "c", "", "shorthand for --color")
 	flag.IntVar(&hpad, "hpad", 0, "horizontal padding between the terminal width and the box")
@@ -165,11 +160,16 @@ func main() {
 	flag.IntVar(&vpad, "y", 0, "shorthand for --vpad")
 	flag.BoolVar(&left, "left", false, "left-align text instead of centering it")
 	flag.BoolVar(&left, "l", false, "shorthand for --left")
+	flag.BoolVar(&showVersion, "version", false, "print the version and exit")
 	flag.Usage = usage
 	flag.Parse()
 
-	r := openStdinOrFile(flag.Args())
-	b, err := io.ReadAll(r)
+	if showVersion {
+		version.Print(os.Stdout, "gbanner")
+		return
+	}
+
+	b, err := io.ReadAll(utils.ArgsOrStdin(flag.Args()))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -7,7 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mitchellh/go-wordwrap"
+	"github.com/jvzantvoort/gextend-bash/utils"
+	"github.com/jvzantvoort/gextend-bash/version"
+	"github.com/mattn/go-runewidth"
 )
 
 const (
@@ -17,54 +19,32 @@ const (
 	E_MARK        = "-#}"
 )
 
-func openStdinOrFile() io.Reader {
-	if len(os.Args) > 1 {
-		instr := strings.Join(os.Args[1:], " ")
-		return strings.NewReader(instr)
-	}
-	return os.Stdin
-}
-
+// PrintCenterText frames instr (left-aligned) in jinja comment markers.
+// instr is expected to fit; see utils.WrapLines.
 func PrintCenterText(instr string) string {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-		}
-	}()
 	if instr == "" {
 		return B_MARK + strings.Repeat(" ", CONSOLE_WIDTH-INDENT_NO+2) + E_MARK
 	}
 
-	stringfmt := fmt.Sprintf("%s %%-%ds %s", B_MARK, CONSOLE_WIDTH-INDENT_NO, E_MARK)
-
-	return fmt.Sprintf(stringfmt, instr)
+	pad := max(CONSOLE_WIDTH-INDENT_NO-runewidth.StringWidth(instr), 0)
+	return B_MARK + " " + instr + strings.Repeat(" ", pad) + " " + E_MARK
 }
 
 func PrintCenterTextLines(instr string) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in PrintCenterTextLines", r)
-			fmt.Println(instr)
-		}
-	}()
-
 	instr = strings.TrimSpace(instr)
-	wrapped := wordwrap.WrapString(instr, CONSOLE_WIDTH-INDENT_NO)
-	textslice := strings.Split(wrapped, "\n")
-	for _, instr := range textslice {
-		fmt.Println(PrintCenterText(instr))
+	for _, line := range utils.WrapLines(instr, CONSOLE_WIDTH-INDENT_NO) {
+		fmt.Println(PrintCenterText(line))
 	}
 }
 
 func main() {
+	version.HandleArgs(os.Args)
 
-	r := openStdinOrFile()
-	b, err := io.ReadAll(r)
+	b, err := io.ReadAll(utils.ArgsOrStdin(os.Args[1:]))
 	if err != nil {
 		log.Fatal(err)
 	}
-	worstr := string(b)
-	PrintCenterTextLines(worstr)
+	PrintCenterTextLines(string(b))
 }
 
 // vim: noexpandtab filetype=go

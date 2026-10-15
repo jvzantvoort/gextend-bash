@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/jvzantvoort/gextend-bash/messages"
+	"github.com/jvzantvoort/gextend-bash/version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -15,9 +16,10 @@ var verbose bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "print_status",
-	Short: "Interface for print_status",
-	Long:  messages.GetLong("root"),
+	Use:     "print_status",
+	Short:   "Interface for print_status",
+	Long:    messages.GetLong("root"),
+	Version: version.String(),
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

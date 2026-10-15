@@ -7,10 +7,16 @@ import (
 	"strings"
 
 	tls "github.com/jvzantvoort/gextend-bash/printing"
+	"github.com/jvzantvoort/gextend-bash/version"
 )
 
+// usage returns the usage line for the given names.
+func usage(name string, names []string) string {
+	return fmt.Sprintf("%s [%s] message", name, strings.Join(names, "|"))
+}
+
 func help(a ...string) {
-	fmt.Printf("%s [%s] message\n", os.Args[0], strings.Join(a, "|"))
+	fmt.Println(usage(os.Args[0], a))
 	os.Exit(0)
 }
 
@@ -25,6 +31,8 @@ func colorNames(cr *tls.Cprint) []string {
 }
 
 func main() {
+	version.HandleArgs(os.Args)
+
 	cr := tls.NewCprint()
 	args := os.Args[1:]
 

@@ -10,26 +10,6 @@ import (
 	"github.com/fatih/color"
 )
 
-func TestOpenStdinOrFile(t *testing.T) {
-	t.Run("uses args when provided", func(t *testing.T) {
-		r := openStdinOrFile([]string{"hello", "world"})
-		data, err := io.ReadAll(r)
-		if err != nil {
-			t.Fatalf("io.ReadAll() error = %v", err)
-		}
-		if string(data) != "hello world" {
-			t.Errorf("openStdinOrFile() content = %q, want %q", data, "hello world")
-		}
-	})
-
-	t.Run("falls back to stdin when no args", func(t *testing.T) {
-		r := openStdinOrFile(nil)
-		if r != os.Stdin {
-			t.Error("expected openStdinOrFile() to return os.Stdin when no args given")
-		}
-	})
-}
-
 func TestColorize(t *testing.T) {
 	color.NoColor = false
 

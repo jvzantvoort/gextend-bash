@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/jvzantvoort/gextend-bash/version"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -191,8 +192,15 @@ func main() {
 	StartFunc(appname)
 	defer EndFunc(appname)
 
+	showVersion := false
 	flag.BoolVar(&debug, "debug", false, "debug messages")
+	flag.BoolVar(&showVersion, "version", false, "print the version and exit")
 	flag.Parse()
+
+	if showVersion {
+		version.Print(os.Stdout, appname)
+		return
+	}
 
 	if debug {
 		log.SetLevel(log.DebugLevel)

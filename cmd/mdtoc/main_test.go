@@ -137,3 +137,64 @@ func TestParseMarkdownEdgeCases(t *testing.T) {
 		}
 	}
 }
+
+func TestReplaceTOC(t *testing.T) {
+	toc := "- [A](#a)\n"
+
+	t.Run("replaces the text between the markers", func(t *testing.T) {
+		in := "# Doc\n\n<!-- toc -->\nold\n<!-- tocstop -->\n\n## A\n"
+		got, err := replaceTOC(in, toc)
+		if err != nil {
+			t.Fatalf("replaceTOC() error = %v", err)
+		}
+		want := "# Doc\n\n<!-- toc -->\n\n- [A](#a)\n\n<!-- tocstop -->\n\n## A\n"
+		if got != want {
+			t.Errorf("replaceTOC() = %q, want %q", got, want)
+		}
+
+		again, err := replaceTOC(got, toc)
+		if err != nil || again != got {
+			t.Errorf("replaceTOC() is not idempotent: %q, %v", again, err)
+		}
+	})
+
+	t.Run("markers inside other text are ignored", func(t *testing.T) {
+		in := "Use `<!-- toc -->` and `<!-- tocstop -->`.\n<!-- toc -->\n<!-- tocstop -->\n"
+		got, err := replaceTOC(in, toc)
+		if err != nil {
+			t.Fatalf("replaceTOC() error = %v", err)
+		}
+		want := "Use `<!-- toc -->` and `<!-- tocstop -->`.\n<!-- toc -->\n\n- [A](#a)\n\n<!-- tocstop -->\n"
+		if got != want {
+			t.Errorf("replaceTOC() = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("missing markers are an error", func(t *testing.T) {
+		for _, in := range []string{"no markers", "<!-- toc -->\nonly start\n", "<!-- tocstop -->\n<!-- toc -->\n", "<!-- toc -->", "text <!-- toc -->\n<!-- tocstop -->\n"} {
+			if _, err := replaceTOC(in, toc); err == nil {
+				t.Errorf("replaceTOC(%q) expected an error", in)
+			}
+		}
+	})
+}
+
+func TestWriteTOC(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "doc.md")
+	if err := os.WriteFile(target, []byte("<!-- toc -->\n<!-- tocstop -->\n"), 0640); err != nil {
+		t.Fatalf("os.WriteFile() error = %v", err)
+	}
+	if err := writeTOC(target, "- [A](#a)\n"); err != nil {
+		t.Fatalf("writeTOC() error = %v", err)
+	}
+	data, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("os.ReadFile() error = %v", err)
+	}
+	if string(data) != "<!-- toc -->\n\n- [A](#a)\n\n<!-- tocstop -->\n" {
+		t.Errorf("file content = %q", data)
+	}
+	if info, _ := os.Stat(target); info.Mode().Perm() != 0640 {
+		t.Errorf("mode = %v, want 0640", info.Mode().Perm())
+	}
+}

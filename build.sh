@@ -7,6 +7,7 @@ linux  386
 linux  arm64
 linux  arm
 darwin amd64
+darwin arm64
 END
 )
 
@@ -37,6 +38,7 @@ C_TAGSPATH="${C_SCRIPTDIR}/tags"
 C_PACKAGESPATH="${C_SCRIPTDIR}/pkg"
 
 C_VERSION="$(git describe --tags --abbrev=0 2>/dev/null)"
+C_DESCRIBE="$(git describe --tags --always --dirty 2>/dev/null)"
 C_REVISION=$(git rev-parse --short HEAD)
 C_URL="$(git config --get remote.origin.url)"
 C_REPONAME="$(basename "${C_URL}" .git)"
@@ -52,6 +54,7 @@ readonly C_SCRIPTDIR
 readonly C_BUILDDIR
 
 LDFLAGS="-w -s"
+[[ -n "${C_DESCRIBE}" ]] && LDFLAGS="${LDFLAGS} -X github.com/jvzantvoort/gextend-bash/version.Version=${C_DESCRIBE}"
 
 # }}}
 
@@ -284,7 +287,8 @@ action_cleanup() {
 
     [[ -d "${C_BUILDDIR}" ]] && rm -rvf "${C_BUILDDIR}"
     [[ -e "${C_PACKAGESPATH}" ]] && rm -vrf "${C_PACKAGESPATH}"
-    [[ -d "${C_TAGSPATH}" ]] && rm -vf "${C_TAGSPATH}"
+    [[ -f "${C_TAGSPATH}" ]] && rm -vf "${C_TAGSPATH}"
+    return 0
 
 }
 
@@ -293,9 +297,6 @@ action_check() {
 
     go vet ./...
     test_result "$?" "go vet"
-
-    local goroot
-    goroot="$(go env GOROOT)"
 
     golangci-lint run ./...
     test_result "$?" "golangci-lint"
@@ -341,9 +342,13 @@ do_dependencies() {
     action_dependencies
 }
 do_build() {
-    print_title "build ${goos}/${arch}"
+    local goos
+    local goarch
+    goos="$(go env GOOS)"
+    goarch="$(go env GOARCH)"
+    print_title "build ${goos}/${goarch}"
     action_dependencies
-    action_build "$(go env GOOS)" "$(go env GOARCH)"
+    action_build "${goos}" "${goarch}"
 }
 do_buildr() {
     shift
@@ -365,7 +370,7 @@ do_buildr() {
         dest="${outputdir}/${goos}.${goarch}"
 
         CGO_ENABLED=0 \
-            GOOS=${goos} GOARCH=${arch} \
+            GOOS=${goos} GOARCH=${goarch} \
             go build -ldflags "${LDFLAGS}" \
             -trimpath \
             -o "${dest}/${target}" "./cmd/${target}"

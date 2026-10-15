@@ -67,3 +67,32 @@ func TestBarColor(t *testing.T) {
 		}
 	}
 }
+
+func TestParseDuration(t *testing.T) {
+	tests := []struct {
+		arg     string
+		want    int
+		wantErr bool
+	}{
+		{"90", 90, false},
+		{"90s", 90, false},
+		{"5m", 300, false},
+		{"1h30m", 5400, false},
+		{"1.5s", 2, false},
+		{"0", 0, true},
+		{"-5", 0, true},
+		{"500ms", 0, true},
+		{"soon", 0, true},
+	}
+
+	for _, tt := range tests {
+		got, err := parseDuration(tt.arg)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("parseDuration(%q) error = %v, wantErr %v", tt.arg, err, tt.wantErr)
+			continue
+		}
+		if got != tt.want {
+			t.Errorf("parseDuration(%q) = %d, want %d", tt.arg, got, tt.want)
+		}
+	}
+}
