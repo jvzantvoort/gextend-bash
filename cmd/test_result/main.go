@@ -32,9 +32,9 @@ func main() {
 	message := strings.Join(args[1:], " ")
 
 	if exitcode == 0 {
-		fmt.Print(utils.MakeStatus("SUCCESS", message))
+		fmt.Print(utils.MakeStatus("SUCCESS", "%s", message))
 	} else {
-		fmt.Print(utils.MakeStatus("FAILURE", message))
+		fmt.Print(utils.MakeStatus("FAILURE", "%s", message))
 	}
 	fmt.Printf("\n")
 	os.Exit(exitcode)

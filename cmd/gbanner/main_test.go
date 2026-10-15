@@ -106,7 +106,9 @@ func TestPrintBanner(t *testing.T) {
 	}
 	os.Stdout = w
 	PrintBanner("hello", "", 0, 0, false)
-	w.Close()
+	if err := w.Close(); err != nil {
+		t.Fatalf("w.Close() error = %v", err)
+	}
 	os.Stdout = orig
 
 	var buf bytes.Buffer

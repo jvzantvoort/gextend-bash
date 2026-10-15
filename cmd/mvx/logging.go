@@ -82,5 +82,5 @@ func CurFunc() string {
 	runtime.Callers(2, pc)
 	f := runtime.FuncForPC(pc[0])
 	retv := f.Name()
-	return strings.Replace(retv, "main.", "", -1)
+	return strings.ReplaceAll(retv, "main.", "")
 }
