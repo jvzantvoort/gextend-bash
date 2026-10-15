@@ -6,14 +6,8 @@ import (
 )
 
 func CenterText(instr string, width int) string {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-		}
-	}()
-
 	// pad the string with half of the difference
-	restlen := width - len(instr)
+	restlen := max(width-len(instr), 0)
 	instr = strings.Repeat(" ", (restlen/2)) + instr
 
 	stringfmt := fmt.Sprintf("%%-%ds", width)

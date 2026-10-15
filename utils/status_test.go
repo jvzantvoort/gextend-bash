@@ -6,21 +6,8 @@ import (
 	"testing"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-runewidth"
 )
-
-// requireTTY skips the test when stdin isn't a terminal: SprintStatus and
-// MakeStatus (via stripString) shell out to an ioctl on stdin to get the
-// console width, which panics when there is no controlling terminal (e.g.
-// under `go test` in CI).
-func requireTTY(t *testing.T) {
-	t.Helper()
-	defer func() {
-		if r := recover(); r != nil {
-			t.Skip("skipping: no controlling terminal available for getWidth()")
-		}
-	}()
-	getWidth()
-}
 
 func TestNormalizeStatus(t *testing.T) {
 	tests := []struct {
@@ -49,7 +36,6 @@ func TestNormalizeStatus(t *testing.T) {
 }
 
 func TestMakeStatus(t *testing.T) {
-	requireTTY(t)
 	color.NoColor = true
 
 	t.Run("known status uses the given label as-is", func(t *testing.T) {
@@ -76,4 +62,37 @@ func TestMakeStatus(t *testing.T) {
 			t.Errorf("expected output to contain %q, got %q", wantLabel, out)
 		}
 	})
+}
+
+func TestGetWidthWithoutTerminal(t *testing.T) {
+	t.Setenv("COLUMNS", "")
+	if got := getWidth(); got <= 0 {
+		t.Errorf("getWidth() = %d, want a positive width", got)
+	}
+}
+
+func TestStripString(t *testing.T) {
+	width := max(min(getWidth(), MAXWITH)-WIDTHSUBS, minMsgWidth)
+
+	tests := []struct {
+		name   string
+		msg    string
+		prefix string
+	}{
+		{"short message is padded", "hello", "hello."},
+		{"word longer than the line is truncated", strings.Repeat("x", 500), strings.Repeat("x", width)},
+		{"wide characters are measured by display width", "日本語", "日本語."},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := stripString("%s", tt.msg)
+			if gotWidth := runewidth.StringWidth(got); gotWidth != width {
+				t.Errorf("stripString() display width = %d, want %d (%q)", gotWidth, width, got)
+			}
+			if !strings.HasPrefix(got, tt.prefix) {
+				t.Errorf("stripString() = %q, want prefix %q", got, tt.prefix)
+			}
+		})
+	}
 }

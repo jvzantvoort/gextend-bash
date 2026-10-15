@@ -3,54 +3,79 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
+// hostsPattern matches a "Host" keyword in an ssh config file; keywords are
+// case-insensitive and may be separated from the value by '=' (see ssh_config(5)).
+var hostsPattern = regexp.MustCompile(`(?i)^host(?:\s+|\s*=\s*)(.+)$`)
+
+// isHostPattern reports whether an ssh config host entry is a pattern
+// (wildcard or negation) rather than a name that can be completed.
+func isHostPattern(host string) bool {
+	return strings.ContainsAny(host, "*?!")
+}
+
+// parseSshConfig returns the host names from the Host lines of an ssh config.
+func parseSshConfig(lines []string) []string {
+	retv := []string{}
+	for _, line := range lines {
+		matches := hostsPattern.FindStringSubmatch(line)
+		if len(matches) != 2 {
+			continue
+		}
+		for _, host := range strings.Fields(matches[1]) {
+			if !isHostPattern(host) {
+				retv = append(retv, host)
+			}
+		}
+	}
+	return retv
+}
+
+// parseHostsFile returns the host names (all columns after the address)
+// from the lines of a hosts file.
+func parseHostsFile(lines []string) []string {
+	retv := []string{}
+	for _, line := range lines {
+		columns := strings.Fields(line)
+		if len(columns) < 2 {
+			continue
+		}
+		retv = append(retv, columns[1:]...)
+	}
+	return retv
+}
+
 // ReadSshConfig reads the ssh config file and returns a list of hosts
 func ReadSshConfig() ([]string, error) {
-	retv := []string{}                                 // hosts
-	hostsPattern := regexp.MustCompile(`Host\s+(\S+)`) // ssh config host pattern
-	fpath, err := Expand("$HOME/.ssh/config")          // ssh config file
-
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return retv, err
+		return nil, err
 	}
+	fpath := filepath.Join(home, ".ssh", "config")
 
 	if _, err := os.Stat(fpath); os.IsNotExist(err) {
-		return retv, fmt.Errorf("file %s does not exist", fpath)
+		return nil, fmt.Errorf("file %s does not exist", fpath)
 	}
 
 	sshConfigLines, err := readFileAsList(fpath)
 	if err != nil {
-		return retv, err
+		return nil, err
 	}
 
-	for _, line := range sshConfigLines {
-		matches := hostsPattern.FindStringSubmatch(line)
-		if len(matches) == 2 {
-			retv = append(retv, matches[1])
-		}
-	}
-
-	return retv, nil
+	return parseSshConfig(sshConfigLines), nil
 }
 
 // ReadHostsFile reads the hosts file and returns a list of hosts
 func ReadHostsFile() ([]string, error) {
-	retv := []string{}
-	// open /etc/hosts and get hosts
 	hostsLines, err := readFileAsList("/etc/hosts")
 	if err != nil {
-		return retv, err
+		return nil, err
 	}
-
-	for _, line := range hostsLines {
-		columns := strings.Split(line, " ")
-		columns = columns[:len(columns)-1]
-		retv = append(retv, columns...)
-	}
-	return retv, nil
+	return parseHostsFile(hostsLines), nil
 }
 
 // SecureShellHelper prints the hosts in the hosts file and ssh config

@@ -4,10 +4,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -60,13 +62,13 @@ func formatDestFile(destdir, sourcefile string, num int) string {
 
 	LogDebugf("ext: %s", ext)
 	if len(ext) == 0 {
-		return fmt.Sprintf("%s/%s.%d", destdir, sourcefile, num)
+		return filepath.Join(destdir, fmt.Sprintf("%s.%d", sourcefile, num))
 	}
 
 	ext_indx := len(sourcefile) - len(ext)
 	LogDebugf("%s", sourcefile[:ext_indx])
 	basename := sourcefile[:ext_indx]
-	return fmt.Sprintf("%s/%s.%d.%s", destdir, basename, num, ext[1:])
+	return filepath.Join(destdir, fmt.Sprintf("%s.%d.%s", basename, num, ext[1:]))
 
 }
 
@@ -124,25 +126,64 @@ func MoveFile(src, dst string) error {
 	}
 
 	dst_path, err := GetNextTarget(dst, src)
+	if errors.Is(err, ErrSameFile) {
+		return os.Remove(src)
+	}
 	if err != nil {
-		if errors.Is(err, ErrMaxCount) {
-			return err
-		}
-		if errors.Is(err, ErrSameFile) {
-			err = os.Remove(src)
-			return err
-		}
-
 		return err
 	}
 
 	LogDebugf("mv %s %s", src, dst_path)
 	err = os.Rename(src, dst_path)
-	if err != nil {
-		log.Fatal(err)
+	if errors.Is(err, syscall.EXDEV) {
+		// different filesystem: rename cannot work, copy and remove instead
+		LogDebugf("cross-device move, copying %s", src)
+		if err = copyFile(src, dst_path); err != nil {
+			return err
+		}
+		return os.Remove(src)
 	}
 
-	return nil
+	return err
+}
+
+// copyFile copies src to dst, preserving the permission bits and the
+// modification time. A partially written dst is removed on failure.
+func copyFile(src, dst string) (err error) {
+	StartFunc(CurFunc())
+	defer EndFunc(CurFunc())
+
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = in.Close() }()
+
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_EXCL, info.Mode().Perm())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := out.Close(); err == nil {
+			err = cerr
+		}
+		if err != nil {
+			_ = os.Remove(dst)
+		}
+	}()
+
+	if _, err = io.Copy(out, in); err != nil {
+		return err
+	}
+	if err = out.Sync(); err != nil {
+		return err
+	}
+	return os.Chtimes(dst, info.ModTime(), info.ModTime())
 }
 
 func main() {
@@ -170,15 +211,26 @@ func main() {
 	LogDebugf("Sources: %s", strings.Join(SourceTargets, ", "))
 	LogDebugf("Destination: %s", DestTarget)
 
-	DestTarget, _ = filepath.Abs(DestTarget)
+	DestTarget, err := filepath.Abs(DestTarget)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", appname, err)
+		os.Exit(1)
+	}
 
+	failed := 0
 	for _, indx := range SourceTargets {
 		msg := fmt.Sprintf("move %s", lastN(indx, 60))
 		err := MoveFile(indx, DestTarget)
 		if err == nil {
-			LogSuccess(msg)
+			LogSuccess("%s", msg)
 		} else {
-			LogFailure(msg)
+			LogFailure("%s", msg)
+			fmt.Fprintf(os.Stderr, "%s: %s: %s\n", appname, indx, err)
+			failed++
 		}
+	}
+
+	if failed > 0 {
+		os.Exit(1)
 	}
 }

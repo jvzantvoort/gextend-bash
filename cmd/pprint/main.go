@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	tls "github.com/jvzantvoort/gextend-bash/printing"
@@ -13,16 +14,22 @@ func help(a ...string) {
 	os.Exit(0)
 }
 
+// colorNames returns the known color/status names in sorted order.
+func colorNames(cr *tls.Cprint) []string {
+	keys := make([]string, 0, len(cr.Colors))
+	for keyn := range cr.Colors {
+		keys = append(keys, keyn)
+	}
+	slices.Sort(keys)
+	return keys
+}
+
 func main() {
 	cr := tls.NewCprint()
 	args := os.Args[1:]
 
 	if len(args) < 2 {
-		keys := []string{}
-		for keyn := range cr.Colors {
-			keys = append(keys, keyn)
-		}
-		help(keys...)
+		help(colorNames(cr)...)
 	}
 
 	cr.Print(args...)

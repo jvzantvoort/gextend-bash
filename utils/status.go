@@ -6,20 +6,22 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-runewidth"
 	"github.com/mitchellh/go-wordwrap"
 )
 
-// stripString formats a string with optional arguments, wraps it to the terminal width minus WIDTHSUBS,
-// and pads it with dots to fill the line.
+// minMsgWidth is the smallest message column stripString will produce, so
+// very narrow terminals don't end up with a zero or negative width.
+const minMsgWidth = 10
+
+// stripString formats a string with optional arguments, keeps the first line
+// of it wrapped to the terminal width minus WIDTHSUBS, and pads it with dots
+// to fill the line. A single word wider than the line is truncated.
 func stripString(format string, args ...interface{}) string {
 
 	msg := format
-	width := getWidth()
-
-	if width > MAXWITH {
-		width = MAXWITH
-	}
-	width -= WIDTHSUBS
+	width := min(getWidth(), MAXWITH) - WIDTHSUBS
+	width = max(width, minMsgWidth)
 
 	if len(args) > 0 {
 		msg = fmt.Sprintf(format, args...)
@@ -27,9 +29,9 @@ func stripString(format string, args ...interface{}) string {
 
 	textslice := strings.Split(wordwrap.WrapString(msg, uint(width)), "\n")
 
-	msg = textslice[0]
+	msg = runewidth.Truncate(textslice[0], width, "")
 
-	return strings.Join([]string{msg, strings.Repeat(".", width-len(msg))}, "")
+	return msg + strings.Repeat(".", width-runewidth.StringWidth(msg))
 }
 
 // NormalizeStatus maps common status aliases (e.g. "OK", "WARN") to their

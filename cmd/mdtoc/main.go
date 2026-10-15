@@ -16,15 +16,37 @@ type Heading struct {
 	Anchor string
 }
 
-// generateAnchor creates an anchor link based on the heading text
+var (
+	headingPattern = regexp.MustCompile(`^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$`) // ATX heading, optional closing #s
+	fencePattern   = regexp.MustCompile("^ {0,3}(`{3,}|~{3,})")            // code fence open/close
+	anchorStrip    = regexp.MustCompile(`[^\p{L}\p{M}\p{N}\p{Pc} -]`)      // what GitHub drops from anchors
+)
+
+// generateAnchor creates an anchor link based on the heading text, the way
+// GitHub does: lowercase, punctuation removed (except '-' and '_'), and
+// spaces replaced by dashes.
 func generateAnchor(text string) string {
 	anchor := strings.ToLower(text)
-	anchor = regexp.MustCompile(`[^a-z0-9\s-]`).ReplaceAllString(anchor, "") // Remove special characters
-	anchor = strings.ReplaceAll(anchor, " ", "-")                            // Replace spaces with dashes
+	anchor = anchorStrip.ReplaceAllString(anchor, "")
+	anchor = strings.ReplaceAll(anchor, " ", "-")
 	return anchor
 }
 
-// parseMarkdown extracts headings from a file
+// anchorSet hands out unique anchors: GitHub suffixes the second and later
+// occurrences of an anchor with -1, -2, ...
+type anchorSet map[string]int
+
+func (a anchorSet) unique(anchor string) string {
+	count := a[anchor]
+	a[anchor] = count + 1
+	if count == 0 {
+		return anchor
+	}
+	return fmt.Sprintf("%s-%d", anchor, count)
+}
+
+// parseMarkdown extracts headings from a file, ignoring anything inside
+// fenced code blocks.
 func parseMarkdown(filename string, maxDepth int) ([]Heading, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -33,17 +55,34 @@ func parseMarkdown(filename string, maxDepth int) ([]Heading, error) {
 	defer func() { _ = file.Close() }()
 
 	var headings []Heading
+	anchors := anchorSet{}
+	fence := "" // the open fence, empty when outside a code block
 	scanner := bufio.NewScanner(file)
-	re := regexp.MustCompile(`^(#{1,6})\s+(.+)$`) // Match markdown headings
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		matches := re.FindStringSubmatch(line)
+
+		if m := fencePattern.FindStringSubmatch(line); m != nil {
+			switch {
+			case fence == "":
+				fence = m[1]
+			case m[1][0] == fence[0] && len(m[1]) >= len(fence) && strings.TrimSpace(line) == m[1]:
+				fence = ""
+			}
+			continue
+		}
+		if fence != "" {
+			continue
+		}
+
+		matches := headingPattern.FindStringSubmatch(line)
 		if matches != nil {
 			level := len(matches[1]) // Count the number of '#' to determine level
+			text := matches[2]
+			// register every heading so duplicate numbering matches GitHub,
+			// even for headings deeper than maxDepth
+			anchor := anchors.unique(generateAnchor(text))
 			if level <= maxDepth {
-				text := matches[2]
-				anchor := generateAnchor(text)
 				headings = append(headings, Heading{Level: level, Text: text, Anchor: anchor})
 			}
 		}

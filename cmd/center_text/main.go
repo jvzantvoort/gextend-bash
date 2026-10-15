@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"unicode/utf8"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/mitchellh/go-wordwrap"
 )
 
@@ -22,37 +24,43 @@ func openStdinOrFile() io.Reader {
 	return os.Stdin
 }
 
+// PrintCenterText centers instr in a '#' framed line of CONSOLE_WIDTH
+// columns. instr is expected to fit; see wrapLines.
 func PrintCenterText(instr string) string {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
-		}
-	}()
 	if instr == "" {
 		return "#" + strings.Repeat(" ", CONSOLE_WIDTH-2) + "#"
 	}
 	// pad the string with half of the difference
-	restlen := CONSOLE_WIDTH - 4 - len(instr)
-	instr = strings.Repeat(" ", (restlen/2)) + instr
+	restlen := max(CONSOLE_WIDTH-4-runewidth.StringWidth(instr), 0)
+	leftpad, rightpad := restlen/2, restlen-restlen/2
 
-	stringfmt := fmt.Sprintf("# %%-%ds #", CONSOLE_WIDTH-4)
+	return "# " + strings.Repeat(" ", leftpad) + instr + strings.Repeat(" ", rightpad) + " #"
+}
 
-	return fmt.Sprintf(stringfmt, instr)
+// wrapLines word-wraps instr to width columns, breaking words that are
+// wider than a line on their own.
+func wrapLines(instr string, width int) []string {
+	var lines []string
+	for _, line := range strings.Split(wordwrap.WrapString(instr, uint(width)), "\n") {
+		for runewidth.StringWidth(line) > width {
+			head := runewidth.Truncate(line, width, "")
+			if head == "" {
+				// a single character wider than the line; emit it as-is
+				_, size := utf8.DecodeRuneInString(line)
+				head = line[:size]
+			}
+			lines = append(lines, head)
+			line = line[len(head):]
+		}
+		lines = append(lines, line)
+	}
+	return lines
 }
 
 func PrintCenterTextLines(instr string) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered in PrintCenterTextLines", r)
-			fmt.Println(instr)
-		}
-	}()
-
 	instr = strings.TrimSpace(instr)
-	wrapped := wordwrap.WrapString(instr, CONSOLE_WIDTH-4)
-	textslice := strings.Split(wrapped, "\n")
-	for _, instr := range textslice {
-		fmt.Println(PrintCenterText(instr))
+	for _, line := range wrapLines(instr, CONSOLE_WIDTH-4) {
+		fmt.Println(PrintCenterText(line))
 	}
 }
 

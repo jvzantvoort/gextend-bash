@@ -24,7 +24,7 @@ func FilterExists(slice []string) []string {
 		}
 		dirn, _ = filepath.Abs(dirn)
 		info, err := os.Stat(dirn)
-		if os.IsNotExist(err) {
+		if err != nil {
 			continue
 		}
 		if info.IsDir() {

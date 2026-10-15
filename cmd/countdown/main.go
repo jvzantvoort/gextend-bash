@@ -5,46 +5,11 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"syscall"
 	"time"
-	"unsafe"
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
-
-type winsize struct {
-	Row    uint16
-	Col    uint16
-	Xpixel uint16
-	Ypixel uint16
-}
-
-func getWidth() int {
-	ws := &winsize{}
-	retCode, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(syscall.Stdin),
-		uintptr(syscall.TIOCGWINSZ),
-		uintptr(unsafe.Pointer(ws)))
-
-	if int(retCode) == -1 {
-		panic(errno)
-	}
-	return int(ws.Col)
-}
-
-func getHeight() int {
-	ws := &winsize{}
-	retCode, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(syscall.Stdin),
-		uintptr(syscall.TIOCGWINSZ),
-		uintptr(unsafe.Pointer(ws)))
-
-	if int(retCode) == -1 {
-		panic(errno)
-	}
-	return int(ws.Row)
-}
 
 func sec2Human(insec int) string {
 	var retv string
@@ -56,12 +21,12 @@ func sec2Human(insec int) string {
 		return "None"
 	}
 
-	if seconds > 3600 {
+	if seconds >= 3600 {
 		hours = int(seconds / 3600)
 		seconds = seconds % 3600
 	}
 
-	if seconds > 60 {
+	if seconds >= 60 {
 		minutes = int(seconds / 60)
 		seconds = seconds % 60
 	}
@@ -95,6 +60,19 @@ func getTimes(epoch int, duration int) (int, string) {
 	return percent, sec2Human(remaining)
 }
 
+// barColor picks the gauge color from the percentage of time remaining:
+// green while there is plenty left, then yellow, then red near the end.
+func barColor(percent int) ui.Color {
+	switch {
+	case percent > 65:
+		return ui.ColorGreen
+	case percent > 33:
+		return ui.ColorYellow
+	default:
+		return ui.ColorRed
+	}
+}
+
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
@@ -102,8 +80,8 @@ func main() {
 	}
 
 	seconds, err := strconv.Atoi(args[0])
-	if err != nil {
-		fmt.Printf("argument %s is not a number\n", args[0])
+	if err != nil || seconds < 1 {
+		fmt.Fprintf(os.Stderr, "argument %s is not a positive number of seconds\n", args[0])
 		os.Exit(1)
 	}
 
@@ -115,8 +93,7 @@ func main() {
 	now := time.Now()
 	start_secs := int(now.Unix())
 
-	screenwidth := getWidth()
-	screenheight := getHeight()
+	screenwidth, screenheight := ui.TerminalDimensions()
 	padding := 10
 	screenheight = (screenheight - (screenheight % 10)) / 2
 
@@ -131,13 +108,7 @@ func main() {
 
 	draw := func() {
 		percent, tsstr := getTimes(start_secs, seconds)
-		if percent > 65 {
-			g0.BarColor = ui.ColorRed
-		} else if percent > 33 {
-			g0.BarColor = ui.ColorYellow
-		} else {
-			g0.BarColor = ui.ColorGreen
-		}
+		g0.BarColor = barColor(percent)
 		g0.Percent = percent
 		g0.Title = fmt.Sprintf("Countdown %s", tsstr)
 		ui.Render(g0)
