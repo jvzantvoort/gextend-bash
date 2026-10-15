@@ -14,10 +14,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, darwin]
-        goarch: [amd64, arm64]
     steps:
     - name: Check out code
       uses: actions/checkout@v7
@@ -28,6 +24,7 @@ jobs:
         go-version-file: 'go.mod'
         cache: true
 
-    - name: Build for ${{ matrix.goos }}/${{ matrix.goarch }}
+    # build.sh package builds and packages every platform in its build list
+    - name: Build all platforms
       run: |
         ./build.sh package

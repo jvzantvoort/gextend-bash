@@ -1,72 +1,87 @@
 #!/bin/bash
+#
+# Install or update the gextend-bash tools from the latest GitHub release.
+# The download is verified against the release's .sha256 checksum.
+#
+set -euo pipefail
 
 APPLICATION="jvzantvoort/gextend-bash"
 RELEASES_URL="https://api.github.com/repos/${APPLICATION}/releases/latest"
 
 function die() { printf "FATAL: %s\n" "$1" >&2 ; exit 1; }
 
-function get_goos() { uname -s|tr "[:upper:]" "[:lower:]"; }
+function get_goos() { uname -s | tr "[:upper:]" "[:lower:]"; }
 
 function get_goarch()
 {
   case "$(uname -m)" in
-    i386)     echo "386" ;;
-    x86_64)   echo "amd64" ;;
-    armv7l)   echo "arm" ;;
-    aarch64)  echo "arm64" ;;
-    mips)     echo "mips" ;;
-    mipsel)   echo "mipsle" ;;
-    mips64)   echo "mips64" ;;
-    mips64el) echo "mips64le" ;;
-    ppc64)    echo "ppc64" ;;
-    ppc64le)  echo "ppc64le" ;;
-    s390x)    echo "s390x" ;;
-    riscv64)  echo "riscv64" ;;
-    *)        die "cannot match platform" ;;
+    i386|i686)        echo "386" ;;
+    x86_64|amd64)     echo "amd64" ;;
+    armv6l|armv7l)    echo "arm" ;;
+    aarch64|arm64)    echo "arm64" ;;
+    *)                die "unsupported machine type $(uname -m)" ;;
   esac
 }
 
-function get_download_url()
+# sha256_check verifies the files listed in a checksum file in the current
+# directory, with whichever tool the platform provides.
+function sha256_check()
 {
-  local extension
-  local goos
-  local goarch
-  goos="$(get_goos)"
-  goarch="$(get_goarch)"
-
-  extension=".${goos}.${goarch}.tar.gz"
-
-  curl -s "${RELEASES_URL}" | \
-    awk -F'\"' -v ext="${extension}" \
-      '$2 ~ /browser_download_url/ && $4 ~ ext { print $4 }' | \
-    grep -E ".tar.gz$"
+  if command -v sha256sum >/dev/null 2>&1
+  then
+    sha256sum -c "$1" >/dev/null
+  elif command -v shasum >/dev/null 2>&1
+  then
+    shasum -a 256 -c "$1" >/dev/null
+  else
+    die "neither sha256sum nor shasum is available to verify the download"
+  fi
 }
 
-URL="$(get_download_url)"
+function get_bindir()
+{
+  local bindir=""
+
+  if [[ "$(id -u)" == "0" ]]
+  then
+    bindir="/usr/local/bin"
+  elif command -v go >/dev/null 2>&1
+  then
+    bindir="$(go env GOBIN 2>/dev/null || true)"
+  fi
+  echo "${bindir:-${HOME}/bin}"
+}
+
+GOOS="$(get_goos)"
+GOARCH="$(get_goarch)"
+EXTENSION=".${GOOS}.${GOARCH}.tar.gz"
+
+RELEASE_JSON="$(curl -fsSL "${RELEASES_URL}")" || die "cannot fetch ${RELEASES_URL}"
+URL="$(awk -F'"' -v ext="${EXTENSION}" \
+  '$2 == "browser_download_url" && substr($4, length($4) - length(ext) + 1) == ext { print $4; exit }' \
+  <<< "${RELEASE_JSON}")"
+
+[[ -n "${URL}" ]] || die "the latest release has no archive for ${GOOS}/${GOARCH}"
+
 FILENAME="$(basename "${URL}")"
-STAGING_AREA="$(mktemp -d "/tmp/${USER}-updater.XXXXX")"
+BINDIR="$(get_bindir)"
 
-[[ -n "${STAGING_AREA}" ]] || die "create staging area"
+STAGING_AREA="$(mktemp -d "${TMPDIR:-/tmp}/gextend-bash-update.XXXXXX")"
+trap 'rm -rf "${STAGING_AREA}"' EXIT
 
-if [[ "$(id -u)" == "0" ]]
-then
-  BINDIR="/usr/local/bin"
-else
-  BINDIR="$(go env GOBIN 2>/dev/null)"
-fi
+cd "${STAGING_AREA}"
+curl -fsSLo "${FILENAME}" "${URL}" || die "download ${URL}"
+curl -fsSLo "${FILENAME}.sha256" "${URL}.sha256" || die "download ${URL}.sha256"
+sha256_check "${FILENAME}.sha256" || die "checksum mismatch for ${FILENAME}"
 
-[[ -z "${BINDIR}" ]] && BINDIR="${HOME}/bin"
+mkdir extract
+tar -xzf "${FILENAME}" -C extract
 
-[[ -d "${BINDIR}" ]] || mkdir -p "${BINDIR}"
-
-curl -LSso "${STAGING_AREA}/${FILENAME}" "${URL}"
-
-pushd "${STAGING_AREA}" >/dev/null 2>&1 || die "change dir to staging area"
-tar -zxf "${FILENAME}" && rm "${FILENAME}"
-find . -type f -printf "%f\n" | while read -r target
+mkdir -p "${BINDIR}"
+for target in extract/*
 do
-  install -m 755 "${target}" "${BINDIR}/${target}"
+  [[ -f "${target}" ]] || continue
+  install -m 755 "${target}" "${BINDIR}/$(basename "${target}")"
 done
-popd >/dev/null 2>&1 || die "change dir back"
 
-rm -rf "${STAGING_AREA}"
+printf "installed %s into %s\n" "${FILENAME%.tar.gz}" "${BINDIR}"
